@@ -168,21 +168,15 @@ def execute_deterministic_tool(
         cur = week_report.current_period
         comp = week_report.comparison
         
-        reply = (
-            f"📅 **Weekly Spending Summary ({cur.period_label}):**\n"
-            f"• **Total Expenses This Week:** ₹{cur.total_expenses:,.2f} across {cur.transaction_count} transaction(s)\n"
-            f"• **Previous Week Expenses:** ₹{comp.previous_expenses:,.2f}\n"
-        )
+        reply = f"You have spent **₹{cur.total_expenses:,.2f}** this week across {cur.transaction_count} transaction(s)."
         if comp.previous_expenses > 0:
             if comp.expense_change_amount > 0:
-                reply += f"• **Trend:** Increased by ₹{comp.expense_change_amount:,.2f} (+{comp.expense_change_percent}% vs last week) 📈\n"
+                reply += f" That is an increase of **₹{comp.expense_change_amount:,.2f}** (+{comp.expense_change_percent}%) compared to last week (₹{comp.previous_expenses:,.2f})."
             else:
-                reply += f"• **Trend:** Decreased by ₹{abs(comp.expense_change_amount):,.2f} ({comp.expense_change_percent}% vs last week) 📉\n"
-        
+                reply += f" That is a decrease of **₹{abs(comp.expense_change_amount):,.2f}** ({comp.expense_change_percent}%) compared to last week (₹{comp.previous_expenses:,.2f})."
         if cur.category_breakdown:
-            reply += "\n**Top Categories This Week:**\n"
-            for c in cur.category_breakdown[:3]:
-                reply += f"• {c.category}: ₹{c.amount:,.2f} ({c.percentage}%)\n"
+            top = cur.category_breakdown[0]
+            reply += f" Your highest spending category this week was **{top.category}** at **₹{top.amount:,.2f}** ({top.percentage}%)."
         return reply, suggested_prompts, {"weekly": cur.model_dump()}
 
     # 2. Yearly Expenses
@@ -190,16 +184,10 @@ def execute_deterministic_tool(
         year_report = compute_period_report(db, period_type="yearly", user_id=user_id)
         cur = year_report.current_period
         reply = (
-            f"🗓️ **Total Expenses for {cur.period_label}:**\n"
-            f"• **Total Year-to-Date Expenses:** ₹{cur.total_expenses:,.2f}\n"
-            f"• **Total Recorded Inflow / Salary:** ₹{cur.total_income:,.2f}\n"
-            f"• **Net Cumulative Balance:** ₹{cur.remaining_balance:,.2f}\n"
-            f"• **Annual Savings Rate:** {cur.savings_rate}%\n"
+            f"Total recorded expenses for **{cur.period_label}** are **₹{cur.total_expenses:,.2f}** across {cur.transaction_count} transactions. "
+            f"Total recorded income is **₹{cur.total_income:,.2f}**, leaving a cumulative balance of **₹{cur.remaining_balance:,.2f}** "
+            f"(Annual savings rate: {cur.savings_rate}%)."
         )
-        if cur.category_breakdown:
-            reply += "\n**Leading Expense Drivers This Year:**\n"
-            for c in cur.category_breakdown[:4]:
-                reply += f"• {c.category}: ₹{c.amount:,.2f} ({c.percentage}% of annual spend)\n"
         return reply, suggested_prompts, {"yearly": cur.model_dump()}
 
     # 3. Remaining Salary / Balance
@@ -212,22 +200,15 @@ def execute_deterministic_tool(
 
         if sal == 0:
             reply = (
-                f"You haven't recorded a salary for **{current_m}** yet.\n"
-                f"• Current month expenses logged: ₹{exp:,.2f}\n"
-                f"💡 Tip: Click the **'Set Salary'** button in the dashboard to store your monthly salary and track your live balance!"
+                f"You haven't recorded a salary for **{current_m}** yet. "
+                f"You have logged **₹{exp:,.2f}** in expenses so far. "
+                f"Please set your monthly salary in the Salary section to track your live remaining balance."
             )
         else:
             reply = (
-                f"💰 **Monthly Salary Cash Flow ({current_m}):**\n"
-                f"• **Recorded Salary:** ₹{sal:,.2f}\n"
-                f"• **Total Expenses So Far:** ₹{exp:,.2f}\n"
-                f"• **Remaining Balance Left:** ₹{rem:,.2f}\n"
-                f"• **Current Savings Rate:** {rate}%\n"
+                f"You have **₹{rem:,.2f}** remaining from your monthly salary of **₹{sal:,.2f}**, "
+                f"after **₹{exp:,.2f}** in recorded expenses. This represents a current savings rate of **{rate}%**."
             )
-            if rem > 0:
-                reply += f"You have ₹{rem:,.2f} remaining from your salary to allocate toward essentials and savings milestones."
-            else:
-                reply += f"⚠️ Caution: Your expenses exceed your salary by ₹{abs(rem):,.2f}. Avoid any discretionary purchases."
         return reply, suggested_prompts, metrics
 
     # 4. Compare This Month With Last Month
@@ -237,29 +218,22 @@ def execute_deterministic_tool(
         prev = month_report.previous_period
         comp = month_report.comparison
 
-        reply = (
-            f"📊 **Month-over-Month Spending Comparison:**\n"
-            f"• **{cur.period_label} Expenses:** ₹{cur.total_expenses:,.2f}\n"
-            f"• **{prev.period_label} Expenses:** ₹{prev.total_expenses:,.2f}\n"
-        )
-        if prev.total_expenses > 0:
-            if comp.expense_change_amount > 0:
-                reply += f"• **Overall Change:** Spending increased by ₹{comp.expense_change_amount:,.2f} (+{comp.expense_change_percent}%).\n"
-            else:
-                reply += f"• **Overall Change:** Spending decreased by ₹{abs(comp.expense_change_amount):,.2f} ({comp.expense_change_percent}%).\n"
+        if prev.total_expenses == 0:
+            reply = (
+                f"In **{cur.period_label}**, your recorded expenses are **₹{cur.total_expenses:,.2f}**. "
+                f"There are no expense records for {prev.period_label} to establish a reliable month-over-month comparison."
+            )
         else:
-            reply += "• No transactions recorded in the previous month for a full baseline comparison.\n"
-
-        if comp.increased_categories:
-            reply += f"\n📈 **Categories With Increased Spending:**\n"
-            for ic in comp.increased_categories[:3]:
-                reply += f"• {ic['category']}: +₹{ic['increase_amount']:,.2f} (from ₹{ic['previous_amount']:,.2f} to ₹{ic['current_amount']:,.2f})\n"
-
-        if comp.decreased_categories:
-            reply += f"\n📉 **Categories With Savings / Reductions:**\n"
-            for dc in comp.decreased_categories[:3]:
-                reply += f"• {dc['category']}: -₹{dc['decrease_amount']:,.2f} (from ₹{dc['previous_amount']:,.2f} to ₹{dc['current_amount']:,.2f})\n"
-
+            change_txt = "increased" if comp.expense_change_amount > 0 else "decreased"
+            reply = (
+                f"### Spending Comparison ({cur.period_label} vs {prev.period_label})\n\n"
+                f"- **{cur.period_label}:** ₹{cur.total_expenses:,.2f}\n"
+                f"- **{prev.period_label}:** ₹{prev.total_expenses:,.2f}\n\n"
+                f"Spending **{change_txt} by ₹{abs(comp.expense_change_amount):,.2f}** ({comp.expense_change_percent}%) compared to last month."
+            )
+            if comp.increased_categories:
+                top_inc = comp.increased_categories[0]
+                reply += f" Main driver: **{top_inc['category']}** (+₹{top_inc['increase_amount']:,.2f})."
         return reply, suggested_prompts, month_report.model_dump()
 
     # 5. Category Month Query (e.g. "How much did I spend on food in September?")
@@ -278,7 +252,11 @@ def execute_deterministic_tool(
         txns = query_txns.all()
         spent = sum(t.amount for t in txns)
 
-        month_label = datetime.strptime(target_m, "%Y-%m").strftime("%B %Y")
+        try:
+            month_label = datetime.strptime(target_m, "%Y-%m").strftime("%B %Y")
+        except Exception:
+            month_label = target_m
+
         if matched_cat:
             reply = f"In **{month_label}**, you spent **₹{spent:,.2f}** on **{matched_cat}** across {len(txns)} transaction(s)."
         else:
@@ -295,54 +273,41 @@ def execute_deterministic_tool(
             reply = f"You haven't recorded any expenses under **{matched_cat}** for {summary.period}."
             return reply, suggested_prompts, {}
 
-        reply = f"🛒 **Audit for {cat_item.category} ({summary.period}):**\n"
-        reply += f"• **Total Spent:** ₹{cat_item.amount:,.2f} ({cat_item.percentage}% of total expenses)\n"
-        
+        reply = f"You have spent **₹{cat_item.amount:,.2f}** on **{cat_item.category}** ({cat_item.percentage}% of your expenses) in {summary.period}."
         if cat_item.budget_limit > 0:
-            reply += f"• **Monthly Budget Limit:** ₹{cat_item.budget_limit:,.2f}\n"
             if cat_item.amount > cat_item.budget_limit:
                 over = cat_item.amount - cat_item.budget_limit
-                reply += f"• **Status:** ⚠️ Exceeded by ₹{over:,.2f}! You have surpassed your limit.\n"
-            elif cat_item.amount >= cat_item.budget_limit * 0.8:
-                rem = cat_item.budget_limit - cat_item.amount
-                reply += f"• **Status:** ⚡ Caution! Approaching limit with only ₹{rem:,.2f} remaining.\n"
+                reply += f" This exceeds your configured limit of ₹{cat_item.budget_limit:,.2f} by ₹{over:,.2f}."
             else:
                 rem = cat_item.budget_limit - cat_item.amount
-                reply += f"• **Status:** ✅ Within budget. ₹{rem:,.2f} remaining.\n"
-        else:
-            if cat_item.percentage > 20:
-                reply += f"• **Assessment:** {cat_item.category} consumes {cat_item.percentage}% of all expenses. Consider setting a category budget limit to keep it below 15%."
-            else:
-                reply += f"• **Assessment:** Moderate spending at {cat_item.percentage}% of your expenses."
-
+                reply += f" This is within your monthly limit of ₹{cat_item.budget_limit:,.2f} (₹{rem:,.2f} remaining)."
         return reply, suggested_prompts, cat_item.model_dump()
 
     # 7. How Can I Save Money
-    elif intent == "save_money" or intent == "reduce_expenses":
+    elif intent in ("save_money", "reduce_expenses"):
         target_save = extract_amount_from_query(query) or 2000.0
         analysis = calculate_analysis(db, current_m, user_id=user_id)
         summary = calculate_summary(db, current_m, user_id=user_id)
 
         discretionary_cats = [c for c in summary.top_categories if not c.is_essential]
 
-        reply = f"💡 **Practical Savings Strategy to Save ₹{target_save:,.2f} This Month:**\n\n"
         if not discretionary_cats:
-            reply += (
-                "You have minimal discretionary lifestyle expenses logged. "
-                "To build savings, review fixed utility plans or explore income enhancement options."
+            reply = (
+                f"You have minimal discretionary lifestyle expenses logged for {summary.period}. "
+                f"To save ₹{target_save:,.2f}, consider auditing fixed commitments or exploring income avenues."
             )
         else:
-            reply += f"Your current discretionary lifestyle spend is **₹{analysis.discretionary_spending:,.2f}** ({analysis.discretionary_percentage}% of expenses).\n\n"
-            reply += "**Recommended Action Plan:**\n"
+            reply = (
+                f"To save **₹{target_save:,.2f}** this month:\n\n"
+                f"Your current discretionary spend is **₹{analysis.discretionary_spending:,.2f}** ({analysis.discretionary_percentage}% of expenses).\n"
+            )
             remaining_to_trim = target_save
             for idx, c in enumerate(discretionary_cats[:3], 1):
-                trim_target = min(round(c.amount * 0.35, 2), remaining_to_trim)
-                reply += f"{idx}. **Reduce {c.category} (Spent ₹{c.amount:,.2f}):** Trim by ~₹{trim_target:,.2f} by swapping delivery for home cooking or postponing non-essential purchases.\n"
+                trim_target = min(round(c.amount * 0.40, 2), remaining_to_trim)
+                reply += f"- **Reduce {c.category}:** Trim ~₹{trim_target:,.2f} (current spend: ₹{c.amount:,.2f}).\n"
                 remaining_to_trim -= trim_target
                 if remaining_to_trim <= 0:
                     break
-
-            reply += f"\nImplementing these adjustments will free up ₹{target_save:,.2f} for your emergency fund and goals!"
         return reply, suggested_prompts, {"target_save": target_save, "discretionary_spending": analysis.discretionary_spending}
 
     # 8. Simulate Purchase
@@ -359,17 +324,18 @@ def execute_deterministic_tool(
             else 0.0
         )
 
-        reply = f"🛍️ **Affordability Simulation for ₹{cost:,.2f}:**\n"
-        reply += f"• Current Available Surplus: ₹{balance:,.2f}\n"
-        reply += f"• Purchase Price: ₹{cost:,.2f}\n"
-        reply += f"• Projected Balance After Purchase: ₹{new_balance:,.2f}\n"
-        reply += f"• Projected Savings Rate: {new_rate}%\n\n"
-
         if new_balance >= 0:
-            reply += f"✅ **Yes, you can afford this expense.** You will retain a comfortable surplus of ₹{new_balance:,.2f}. This purchase is safe for your cash flow."
+            reply = (
+                f"Yes, you can afford this **₹{cost:,.2f}** expense. "
+                f"Your current surplus is **₹{balance:,.2f}**; after this purchase, your remaining balance will be "
+                f"**₹{new_balance:,.2f}** (Projected savings rate: {new_rate}%)."
+            )
         else:
             shortfall = abs(new_balance)
-            reply += f"⚠️ **Caution: An expense of ₹{cost:,.2f} exceeds your available funds.** Shortfall of ₹{shortfall:,.2f} would trigger a cash deficit. Postponing is advised."
+            reply = (
+                f"Caution: A purchase of **₹{cost:,.2f}** exceeds your available funds by **₹{shortfall:,.2f}**. "
+                f"Your current balance is ₹{balance:,.2f}. Postponing this expense is recommended to avoid a deficit."
+            )
         return reply, suggested_prompts, {"cost": cost, "projected_balance": new_balance}
 
     # 9. Top Spending
@@ -379,71 +345,51 @@ def execute_deterministic_tool(
             return "You haven't recorded any expenses yet for this period.", suggested_prompts, {}
 
         top_cat = summary.top_categories[0]
-        reply = f"Your highest spending category is **{top_cat.category}** at **₹{top_cat.amount:,.2f}** ({top_cat.percentage}% of total expenses).\n\n"
-        reply += "**Top 4 Expense Drivers:**\n"
-        for idx, c in enumerate(summary.top_categories[:4], 1):
-            tag = "Essential" if c.is_essential else "Discretionary"
-            reply += f"{idx}. **{c.category}**: ₹{c.amount:,.2f} ({c.percentage}%) — [{tag}]\n"
+        reply = f"Your biggest expense category this month is **{top_cat.category}**, with a total of **₹{top_cat.amount:,.2f}** ({top_cat.percentage}% of total expenses)."
+        if len(summary.top_categories) > 1:
+            second = summary.top_categories[1]
+            reply += f" Followed by **{second.category}** at **₹{second.amount:,.2f}** ({second.percentage}%)."
         return reply, suggested_prompts, summary.model_dump()
 
-    # Prediction & Monthly Forecast Tool
+    # 10. Prediction & Monthly Forecast Tool (Requirement 4)
     elif intent == "predict_forecast":
         fc = compute_forecast(db, current_m, user_id=user_id)
-        reply = (
-            f"🔮 **Monthly Expense & Savings Forecast ({fc.month}):**\n"
-            f"• **Days Evaluated:** {fc.days_passed} of {fc.total_days} days ({fc.days_remaining} days left in cycle)\n"
-            f"• **Expenses Logged So Far:** ₹{fc.current_expenses:,.2f} (Daily Pace: ₹{fc.daily_spending_pace:,.2f}/day)\n"
-            f"• **Projected Month-End Outflow:** ₹{fc.projected_expenses:,.2f}\n"
-            f"• **Projected Month-End Savings:** ₹{fc.projected_savings:,.2f} ({fc.projected_savings_rate}% savings rate)\n"
-            f"• **Projected Trajectory Status:** {fc.projected_status.upper()}\n"
-        )
-        if fc.is_overspending_on_unwanted:
-            reply += f"\n⚠️ **Warning on Unwanted Discretionary Spending:**\n{fc.overspending_summary}\n"
+        return fc.forecast_presentation, suggested_prompts, fc.model_dump()
+
+    # 11. Unwanted / Discretionary Overspending Warning Tool
+    elif intent == "unwanted_spending":
+        fc = compute_forecast(db, current_m, user_id=user_id)
+        if not fc.has_sufficient_history:
+            reply = (
+                f"You have spent **₹{fc.total_unwanted_spent:,.2f}** on discretionary items so far in {fc.month}. "
+                f"Historical data is currently insufficient to establish a regular spending baseline. "
+                f"Logging transactions across multiple months will allow PaisaPilot to calculate your personal baseline."
+            )
+        elif fc.is_overspending_on_unwanted:
+            reply = f"### Discretionary Spending Alert ({fc.month})\n\n{fc.overspending_summary}\n\n"
             for a in fc.unwanted_spending_alerts:
                 reply += (
-                    f"\n• **{a.category}**: Current ₹{a.current_spent:,.2f} ➔ Projected ₹{a.projected_spent:,.2f} "
-                    f"(+{a.excess_percentage}% over regular baseline ₹{a.regular_baseline:,.2f})\n"
+                    f"- **{a.category}:** Spent ₹{a.current_spent:,.2f} so far; estimated month-end is ₹{a.projected_spent:,.2f} "
+                    f"(+{a.excess_percentage}% over baseline ₹{a.regular_baseline:,.2f}).\n"
                     f"  *{a.recommendation}*\n"
                 )
         else:
-            reply += f"\n✅ **Controlled Outflows:** Your discretionary spending is in healthy balance with regular benchmarks."
-        return reply, suggested_prompts, fc.model_dump()
-
-    # Unwanted / Discretionary Overspending Warning Tool
-    elif intent == "unwanted_spending":
-        fc = compute_forecast(db, current_m, user_id=user_id)
-        if fc.is_overspending_on_unwanted:
             reply = (
-                f"⚠️ **Unwanted / Discretionary Overspending Warning ({fc.month}):**\n"
-                f"{fc.overspending_summary}\n\n"
-                f"**Specific Category Outflow Breakdown:**\n"
-            )
-            for a in fc.unwanted_spending_alerts:
-                reply += (
-                    f"• **{a.category}** [{a.severity.upper()}]:\n"
-                    f"  - Spent so far: ₹{a.current_spent:,.2f} in {fc.days_passed} days\n"
-                    f"  - Regular monthly benchmark: ₹{a.regular_baseline:,.2f}\n"
-                    f"  - Projected month-end spend: ₹{a.projected_spent:,.2f} (+₹{a.excess_amount:,.2f} or +{a.excess_percentage}% higher than regular)\n"
-                    f"  - Actionable Advice: {a.recommendation}\n\n"
-                )
-        else:
-            reply = (
-                f"✅ **No Excessive Unwanted Spending Detected!**\n"
-                f"You have spent ₹{fc.total_unwanted_spent:,.2f} on discretionary/unwanted items so far in {fc.month}. "
-                f"At your current pace of ₹{fc.daily_spending_pace:,.2f}/day, your projected month-end outflow is ₹{fc.projected_expenses:,.2f}, "
-                f"which is safely within your regular benchmark of ₹{fc.regular_unwanted_baseline:,.2f}. Keep up the disciplined habit!"
+                f"Your discretionary spending is well controlled and tracking within your regular benchmarks. "
+                f"Total spent on discretionary items so far: **₹{fc.total_unwanted_spent:,.2f}**. "
+                f"Projected month-end savings: **₹{fc.projected_savings:,.2f}** ({fc.projected_savings_rate}%)."
             )
         return reply, suggested_prompts, fc.model_dump()
 
     # Default: General cash flow overview
     summary = calculate_summary(db, current_m, user_id=user_id)
     reply = (
-        f"Here is your verified financial overview for **{summary.period}**:\n"
-        f"• Monthly Salary Inflow: ₹{summary.current_month_salary:,.2f}\n"
-        f"• Total Expenses: ₹{summary.total_expenses:,.2f}\n"
-        f"• Remaining Balance: ₹{summary.available_balance:,.2f}\n"
-        f"• Current Savings Rate: {summary.savings_rate}%\n"
-        f"• Logged Transactions: {summary.transaction_count}\n"
+        f"### Financial Overview for {summary.period}\n\n"
+        f"- **Monthly Salary:** ₹{summary.current_month_salary:,.2f}\n"
+        f"- **Total Expenses:** ₹{summary.total_expenses:,.2f}\n"
+        f"- **Remaining Balance:** ₹{summary.available_balance:,.2f}\n"
+        f"- **Current Savings Rate:** {summary.savings_rate}%\n"
+        f"- **Logged Transactions:** {summary.transaction_count}"
     )
     return reply, suggested_prompts, summary.model_dump()
 

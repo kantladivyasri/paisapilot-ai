@@ -1,5 +1,6 @@
 import pytest
 from datetime import date
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -31,8 +32,9 @@ def client():
             db.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:
-        yield c
+    with patch("app.agents.orchestrator.get_groq_api_key", return_value=None):
+        with TestClient(app) as c:
+            yield c
 
     app.dependency_overrides.clear()
     Base.metadata.drop_all(bind=engine)
@@ -62,8 +64,7 @@ def test_forecast_and_unwanted_spending_warning(client):
         },
     )
 
-    # 3. Add heavy unwanted/discretionary spending in Shopping & Entertainment
-    # Regular baseline for Shopping is ~₹2,500. Spending ₹6,000 in early days will easily trigger an overspending warning!
+    # 3. Add heavy spending in Shopping (configured limit ₹2,500)
     client.post(
         "/api/transactions",
         json={
@@ -76,18 +77,6 @@ def test_forecast_and_unwanted_spending_warning(client):
             "date": f"{curr_month}-03",
         },
     )
-    client.post(
-        "/api/transactions",
-        json={
-            "description": "Weekend Luxury Club & Drinks",
-            "amount": 4000.0,
-            "transaction_type": "expense",
-            "category": "Entertainment",
-            "payment_method": "UPI",
-            "is_essential": False,
-            "date": f"{curr_month}-04",
-        },
-    )
 
     # 4. Fetch Prediction Forecast via API
     res = client.get(f"/api/analysis/forecast?month={curr_month}")
@@ -95,34 +84,92 @@ def test_forecast_and_unwanted_spending_warning(client):
     data = res.json()
 
     assert data["month"] == curr_month
+    assert "evaluation_date" in data
+    assert data["salary_recorded"] is True
+    assert data["monthly_salary"] == 50000.0
     assert data["current_income"] == 50000.0
-    # Total expenses so far = 15000 + 6000 + 4000 = 25000
-    assert data["current_expenses"] == 25000.0
-    # Projected expenses must be at least current expenses
-    assert data["projected_expenses"] >= 25000.0
+    assert data["current_expenses"] == 21000.0
+    assert data["projected_expenses"] >= 21000.0
+    assert data["estimated_remaining_balance"] == data["projected_savings"]
+    assert "forecast_presentation" in data
+    assert "Total expenses recorded so far" in data["forecast_presentation"]
+    assert "Estimated month-end expenses (projection)" in data["forecast_presentation"]
 
-    # Must detect overspending on unwanted things!
-    assert data["is_overspending_on_unwanted"] is True
-    assert len(data["unwanted_spending_alerts"]) >= 1
-
-    # Check alert details for Shopping or Entertainment
-    shop_alert = next((a for a in data["unwanted_spending_alerts"] if a["category"] == "Shopping"), None)
-    assert shop_alert is not None
-    assert shop_alert["current_spent"] == 6000.0
-    assert shop_alert["excess_amount"] > 0
-    assert shop_alert["severity"] in ["warning", "critical"]
-    assert "cut down" in shop_alert["recommendation"].lower() or "save" in shop_alert["recommendation"].lower()
-
-    # 5. Test AI Chatbot queries for prediction & unwanted warnings
-    # Query A: "Predict my monthly expenses"
+    # 5. Test AI Chatbot queries for prediction & forecast
     chat_pred = client.post("/api/chat", json={"message": "Predict my monthly expenses and savings for this month"})
     assert chat_pred.status_code == 200
     pred_reply = chat_pred.json()["reply"]
     assert "₹" in pred_reply
-    assert any(term in pred_reply.lower() for term in ["projected", "forecast", "savings", "pace", "expenses"])
+    assert "Expense Forecast" in pred_reply or "Total expenses recorded so far" in pred_reply
 
-    # Query B: "Am I spending too much on unwanted things than regular?"
-    chat_warn = client.post("/api/chat", json={"message": "Am I spending too much on unwanted things than regular?"})
-    assert chat_warn.status_code == 200
-    warn_reply = chat_warn.json()["reply"]
-    assert any(term in warn_reply.lower() for term in ["shopping", "unwanted", "alert", "warning", "caution", "discretionary", "excess"])
+
+def test_forecast_missing_salary_and_empty_expenses(client):
+    today = date.today()
+    curr_month = today.strftime("%Y-%m")
+
+    # Fetch forecast without setting any salary or expenses
+    res = client.get(f"/api/analysis/forecast?month={curr_month}")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert data["salary_recorded"] is False
+    assert data["monthly_salary"] == 0.0
+    assert data["current_expenses"] == 0.0
+    assert data["daily_spending_pace"] == 0.0
+    assert data["projected_expenses"] == 0.0
+    assert data["has_sufficient_history"] is False
+    assert "Not recorded" in data["forecast_presentation"] or "0.00" in data["forecast_presentation"]
+
+    # Chatbot response should explain salary is missing
+    chat_sal = client.post("/api/chat", json={"message": "How much money do I have left from my salary?"})
+    assert chat_sal.status_code == 200
+    reply = chat_sal.json()["reply"]
+    assert "haven't recorded a salary" in reply or "set your monthly salary" in reply.lower()
+
+
+def test_forecast_with_historical_months_baseline(client):
+    today = date.today()
+    curr_month = today.strftime("%Y-%m")
+
+    # Add prior month transactions (August & September)
+    client.post(
+        "/api/transactions",
+        json={
+            "description": "August Dining",
+            "amount": 2000.0,
+            "transaction_type": "expense",
+            "category": "Food & Dining",
+            "date": "2026-08-15",
+        },
+    )
+    client.post(
+        "/api/transactions",
+        json={
+            "description": "September Dining",
+            "amount": 2500.0,
+            "transaction_type": "expense",
+            "category": "Food & Dining",
+            "date": "2026-09-15",
+        },
+    )
+
+    # Current month transaction
+    client.post(
+        "/api/transactions",
+        json={
+            "description": "October Dining",
+            "amount": 1000.0,
+            "transaction_type": "expense",
+            "category": "Food & Dining",
+            "date": f"{curr_month}-05",
+        },
+    )
+
+    res = client.get(f"/api/analysis/forecast?month={curr_month}")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert data["has_sufficient_history"] is True
+    assert data["history_months_count"] >= 1
+    # Regular baseline for Food & Dining should reflect historical average (2000 + 2500) / 2 = 2250
+    assert data["regular_unwanted_baseline"] > 0

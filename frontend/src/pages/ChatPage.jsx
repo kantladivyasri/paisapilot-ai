@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { formatINR } from '../utils/formatters';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 const ENHANCED_PROMPTS = [
   'Predict my monthly expenses and savings',
@@ -235,11 +236,15 @@ export default function ChatPage() {
                     <div
                       className={`rounded-2xl px-5 py-3.5 text-xs leading-relaxed ${
                         isUser
-                          ? 'bg-emerald-500 text-navy-950 font-semibold rounded-tr-none shadow-md shadow-emerald-500/10'
-                          : 'bg-slate-900/90 border border-slate-800 text-slate-100 rounded-tl-none whitespace-pre-wrap'
+                          ? 'bg-emerald-500 text-navy-950 font-semibold rounded-tr-none shadow-md shadow-emerald-500/10 whitespace-pre-wrap'
+                          : 'bg-slate-900/90 border border-slate-800 text-slate-100 rounded-tl-none'
                       }`}
                     >
-                      {m.text}
+                      {isUser ? (
+                        m.text
+                      ) : (
+                        <MarkdownRenderer content={m.text} />
+                      )}
                     </div>
 
                     {/* Optional suggested followups */}

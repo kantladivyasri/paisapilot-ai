@@ -229,6 +229,7 @@ class UnwantedSpendingAlert(BaseModel):
 
 class ForecastResponse(BaseModel):
     month: str
+    evaluation_date: str
     days_passed: int
     days_remaining: int
     total_days: int
@@ -241,12 +242,18 @@ class ForecastResponse(BaseModel):
     projected_status: Literal["healthy", "caution", "deficit_risk"]
     daily_spending_pace: float
     regular_daily_baseline: float
+    has_sufficient_history: bool
+    history_months_count: int
+    salary_recorded: bool
+    monthly_salary: float
+    estimated_remaining_balance: float
     unwanted_spending_alerts: List[UnwantedSpendingAlert]
     total_unwanted_spent: float
     projected_unwanted_spent: float
     regular_unwanted_baseline: float
     is_overspending_on_unwanted: bool
     overspending_summary: str
+    forecast_presentation: str
 
 
 # =====================
