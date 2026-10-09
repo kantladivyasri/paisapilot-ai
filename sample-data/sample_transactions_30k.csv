@@ -1,0 +1,11 @@
+date,description,amount,type,category
+2026-10-01,Monthly Salary Credit,30000.00,income,Salary
+2026-10-02,Apartment Monthly Rent,7000.00,expense,Rent
+2026-10-04,Monthly Groceries & Ration,2500.00,expense,Groceries
+2026-10-06,Fuel & Metro Commute,1000.00,expense,Transport
+2026-10-08,Electricity & Utility Bill,1200.00,expense,Electricity
+2026-10-10,Weekend Dining & Swiggy Delivery,1500.00,expense,Food
+2026-10-12,Professional Course & Books,3000.00,expense,Education
+2026-10-14,Clothing & Essentials Shopping,1800.00,expense,Shopping
+2026-10-16,Pharmacy & Health Checkup,500.00,expense,Healthcare
+2026-10-18,OTT Streaming & Movie Tickets,500.00,expense,Entertainment
