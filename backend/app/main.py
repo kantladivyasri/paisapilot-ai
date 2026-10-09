@@ -21,6 +21,10 @@ from app.schemas import (
     ChatResponse,
     CsvImportResponse,
     ForecastResponse,
+    ImportAgentCommitRequest,
+    ImportAgentCommitResponse,
+    ImportAgentPreviewRequest,
+    ImportAgentPreviewResponse,
     PeriodReportResponse,
     SalaryCreate,
     SalaryResponse,
@@ -32,6 +36,7 @@ from app.schemas import (
     TransactionResponse,
     TransactionUpdate,
 )
+from app.agents.import_agent import TransactionImportAgent
 from app.agents.analyzer import calculate_analysis, calculate_summary
 from app.agents.prediction_agent import compute_forecast
 from app.agents.budget_agent import generate_budget_plan, get_current_budget, save_or_update_budget
@@ -535,6 +540,67 @@ async def import_transactions_csv(
             raise HTTPException(status_code=400, detail="Unable to decode CSV file")
 
     return parse_and_import_csv(content=content, filename=file.filename, db=db)
+
+
+# ==========================================
+# Automated Transaction Import Agent API
+# ==========================================
+
+@app.post("/api/agents/import-transactions/preview", response_model=ImportAgentPreviewResponse)
+def preview_import_agent(
+    payload: ImportAgentPreviewRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Automated Transaction Import Agent (Preview Mode):
+    Extracts transactions, merchants, amounts, dates, and categories from unstructured
+    SMS, UPI alerts, or statement text, and audits for potential duplicates.
+    """
+    return TransactionImportAgent.preview_import(payload.text, db)
+
+
+@app.post("/api/agents/import-transactions/commit", response_model=ImportAgentCommitResponse)
+def commit_import_agent(
+    payload: ImportAgentCommitRequest,
+    skip_duplicates: bool = True,
+    db: Session = Depends(get_db),
+):
+    """
+    Automated Transaction Import Agent (Commit Mode):
+    Saves user-reviewed transactions into the database, creating categories if needed,
+    and updates live monthly balances.
+    """
+    return TransactionImportAgent.commit_transactions(
+        payload.transactions, db, skip_duplicates=skip_duplicates
+    )
+
+
+@app.post("/api/agents/import-transactions/auto", response_model=ImportAgentCommitResponse)
+def auto_import_agent(
+    payload: ImportAgentPreviewRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Automated Transaction Import Agent (Direct Auto Mode):
+    Extracts transactions from raw SMS/statement text and directly commits all non-duplicate items.
+    """
+    preview = TransactionImportAgent.preview_import(payload.text, db)
+    txns_to_commit = [
+        TransactionCreate(
+            description=p.description,
+            amount=p.amount,
+            transaction_type=p.transaction_type,
+            category=p.category,
+            is_essential=p.is_essential,
+            date=p.date,
+            notes=f"Auto-imported by Agent ({p.payment_method or 'Online'})",
+        )
+        for p in preview.parsed_transactions
+        if not p.is_duplicate
+    ]
+    return TransactionImportAgent.commit_transactions(
+        txns_to_commit, db, skip_duplicates=True
+    )
 
 
 # =====================

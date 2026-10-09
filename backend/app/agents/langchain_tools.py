@@ -281,6 +281,57 @@ def get_nidhi_langchain_tools(db: Session, user_id: str = "default_user") -> Lis
             )
         return "Recent Transactions:\n" + "\n".join(lines)
 
+    @tool
+    def import_transactions_agent_tool(raw_text_or_sms_batch: str, commit_immediately: bool = False) -> str:
+        """
+        Automated Transaction Import Agent tool:
+        Extracts, categorizes, validates, and detects duplicates from raw bank SMS alerts,
+        UPI notifications, statement lines, or natural language expense notes.
+        Args:
+            raw_text_or_sms_batch: Raw text containing one or more bank SMS messages or transaction sentences.
+            commit_immediately: If True, saves non-duplicate records into the database. If False, returns preview.
+        """
+        from app.agents.import_agent import TransactionImportAgent
+        from app.schemas import TransactionCreate
+
+        preview = TransactionImportAgent.preview_import(raw_text_or_sms_batch, db, user_id=user_id)
+        if preview.total_detected == 0:
+            return "No transactions could be parsed from the provided text. Please verify the wording or format."
+
+        lines = [f"Import Agent Extracted {preview.total_detected} Transaction(s):"]
+        for p in preview.parsed_transactions:
+            dup_tag = " [⚠️ Potential Duplicate]" if p.is_duplicate else " [✨ New]"
+            sign = "+" if p.transaction_type == "income" else "-"
+            lines.append(
+                f"- {p.date}: {p.description} -> {p.category} ({sign}₹{p.amount:,.2f}) | {p.payment_method or 'Online'}{dup_tag}"
+            )
+
+        lines.append(f"\nTotal Outflow: ₹{preview.total_expenses:,.2f} | Total Inflow: ₹{preview.total_income:,.2f}")
+
+        if commit_immediately:
+            txns_to_commit = [
+                TransactionCreate(
+                    description=p.description,
+                    amount=p.amount,
+                    transaction_type=p.transaction_type,
+                    category=p.category,
+                    is_essential=p.is_essential,
+                    date=p.date,
+                    notes=f"Auto-imported by Agent ({p.payment_method or 'Online'})",
+                )
+                for p in preview.parsed_transactions
+                if not p.is_duplicate
+            ]
+            if txns_to_commit:
+                commit_res = TransactionImportAgent.commit_transactions(txns_to_commit, db, user_id=user_id)
+                lines.append(f"Successfully saved {commit_res.imported_count} new transaction(s) to your database!")
+            else:
+                lines.append("All detected items were identified as duplicates. No new records saved.")
+        else:
+            lines.append("Preview mode: These were not yet saved. Confirm to record them in your database.")
+
+        return "\n".join(lines)
+
     return [
         get_salary_and_balance_tool,
         query_category_spending_tool,
@@ -289,4 +340,6 @@ def get_nidhi_langchain_tools(db: Session, user_id: str = "default_user") -> Lis
         check_affordability_simulation_tool,
         get_budget_and_savings_goals_tool,
         list_recent_transactions_tool,
+        import_transactions_agent_tool,
     ]
+

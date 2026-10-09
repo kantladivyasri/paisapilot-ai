@@ -14,6 +14,7 @@ import {
   Bell,
   ChevronDown,
   ChevronUp,
+  Bot,
 } from 'lucide-react';
 import {
   PieChart,
@@ -41,7 +42,7 @@ const PERIOD_OPTIONS = [
   { id: 'custom', label: 'Custom' },
 ];
 
-export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
+export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport, onOpenSmartImport }) {
   const [periodType, setPeriodType] = useState('monthly');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -164,6 +165,19 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
               </button>
             ))}
           </div>
+
+          {/* Automated Transaction Import Agent */}
+          {onOpenSmartImport && (
+            <button
+              type="button"
+              onClick={onOpenSmartImport}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 transition-colors shadow-sm"
+              title="Import transactions automatically from bank SMS, UPI alerts, or statements"
+            >
+              <Bot className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Import Agent</span>
+            </button>
+          )}
 
           {/* Manage Categories Trigger */}
           <button

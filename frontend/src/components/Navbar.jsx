@@ -1,10 +1,11 @@
 import React from 'react';
-import { Plus, Trash2, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Bot } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 
 export default function Navbar({
   activeTab,
   onQuickAdd,
+  onOpenSmartImport,
   onSeedDemo,
   onResetDemo,
   onOpenSettings,
@@ -71,6 +72,16 @@ export default function Navbar({
         >
           <Trash2 className="w-3.5 h-3.5 text-rose-400" />
           <span className="hidden md:inline">Clear All</span>
+        </button>
+
+        {/* Automated Transaction Import Agent */}
+        <button
+          onClick={onOpenSmartImport}
+          title="Import transactions automatically from bank SMS, UPI alerts, or statements"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all shadow-sm"
+        >
+          <Bot className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="hidden sm:inline">Import Agent</span>
         </button>
 
         {/* Quick Add Expense / Income */}

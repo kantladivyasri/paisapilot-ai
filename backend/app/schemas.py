@@ -425,3 +425,50 @@ class CsvImportResponse(BaseModel):
     warnings: List[CsvImportDuplicateWarning]
     errors: List[CsvImportRowError]
     message: str
+
+
+# ==========================================
+# Automated Transaction Import Agent Schemas
+# ==========================================
+
+class ImportAgentParsedItem(BaseModel):
+    raw_text: str
+    description: str
+    amount: float
+    transaction_type: Literal["expense", "income"]
+    category: str
+    is_essential: bool
+    date: str
+    confidence: float = 0.95
+    is_duplicate: bool = False
+    duplicate_reason: Optional[str] = None
+    merchant: Optional[str] = None
+    payment_method: Optional[str] = None
+
+
+class ImportAgentPreviewRequest(BaseModel):
+    text: str = Field(..., min_length=2, description="Raw bank SMS, UPI notification, or statement text")
+    source_type: Optional[str] = Field("auto", description="Source format: auto, sms, statement, natural_text, csv")
+
+
+class ImportAgentPreviewResponse(BaseModel):
+    total_detected: int
+    parsed_transactions: List[ImportAgentParsedItem]
+    total_expenses: float
+    total_income: float
+    duplicate_count: int
+    summary_notes: str
+
+
+class ImportAgentCommitRequest(BaseModel):
+    transactions: List[TransactionCreate]
+
+
+class ImportAgentCommitResponse(BaseModel):
+    imported_count: int
+    skipped_duplicates: int
+    total_expenses: float
+    total_income: float
+    message: str
+    sample_descriptions: List[str] = []
+

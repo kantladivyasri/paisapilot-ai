@@ -27,6 +27,7 @@ SYSTEM_PROMPT = (
     "   - For purchasing questions ('Can I afford X?') -> invoke check_affordability_simulation_tool.\n"
     "   - For budgets and savings targets -> invoke get_budget_and_savings_goals_tool.\n"
     "   - For recent transactions -> invoke list_recent_transactions_tool.\n"
+    "   - For importing transactions from SMS, UPI alerts, or statement text -> invoke import_transactions_agent_tool.\n"
     "2. STRICT FACTUAL GROUNDING: Rely exclusively on the tool results. Never invent numbers, dates, salaries, or baselines.\n"
     "3. CONCISE & PROFESSIONAL: Deliver clear, natural, direct answers in 1–3 concise sentences for simple queries. "
     "Use bullet points only when presenting multiple figures.\n"

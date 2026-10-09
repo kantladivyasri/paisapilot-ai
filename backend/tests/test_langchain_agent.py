@@ -75,9 +75,9 @@ def test_db():
 
 
 def test_langchain_tools_suite(test_db):
-    """Verifies that all 7 LangChain tools execute with accurate database data."""
+    """Verifies that all 8 LangChain tools execute with accurate database data."""
     tools = get_nidhi_langchain_tools(test_db, user_id="default_user")
-    assert len(tools) == 7
+    assert len(tools) == 8
 
     tool_map = {t.name: t for t in tools}
     expected_names = [
@@ -88,6 +88,7 @@ def test_langchain_tools_suite(test_db):
         "check_affordability_simulation_tool",
         "get_budget_and_savings_goals_tool",
         "list_recent_transactions_tool",
+        "import_transactions_agent_tool",
     ]
     for name in expected_names:
         assert name in tool_map

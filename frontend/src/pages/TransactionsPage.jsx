@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ArrowUpDown,
   Tags,
+  Bot,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { formatINR, formatDate, getCategoryColor } from '../utils/formatters';
@@ -34,6 +35,7 @@ export default function TransactionsPage({
   onOpenAddModal,
   onEditTransaction,
   onOpenImport,
+  onOpenSmartImport,
   onClearAll,
 }) {
   const [transactions, setTransactions] = useState([]);
@@ -184,6 +186,15 @@ export default function TransactionsPage({
                 <span>Clear All</span>
               </button>
             )}
+
+            <button
+              onClick={onOpenSmartImport}
+              className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all shadow-sm"
+              title="Automated Transaction Import Agent from bank SMS or statements"
+            >
+              <Bot className="w-4 h-4 text-emerald-400" />
+              <span>Auto Import Agent</span>
+            </button>
 
             <button
               onClick={onOpenImport}

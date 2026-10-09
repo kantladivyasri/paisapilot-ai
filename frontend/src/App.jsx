@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import TransactionModal from './components/TransactionModal';
 import CsvImportModal from './components/CsvImportModal';
+import SmartImportModal from './components/SmartImportModal';
 import SettingsModal from './components/SettingsModal';
 import ConfirmModal from './components/ConfirmModal';
 
@@ -20,6 +21,7 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isSmartImportOpen, setIsSmartImportOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [groqConfigured, setGroqConfigured] = useState(false);
@@ -113,6 +115,7 @@ export default function App() {
             setEditingTransaction(null);
             setIsAddModalOpen(true);
           }}
+          onOpenSmartImport={() => setIsSmartImportOpen(true)}
           onSeedDemo={handleSeedDemo}
           onResetDemo={() => setIsResetConfirmOpen(true)}
           onOpenSettings={() => setIsSettingsModalOpen(true)}
@@ -144,6 +147,7 @@ export default function App() {
                 setIsAddModalOpen(true);
               }}
               onOpenImport={() => setIsImportModalOpen(true)}
+              onOpenSmartImport={() => setIsSmartImportOpen(true)}
             />
           )}
 
@@ -159,6 +163,7 @@ export default function App() {
                 setIsAddModalOpen(true);
               }}
               onOpenImport={() => setIsImportModalOpen(true)}
+              onOpenSmartImport={() => setIsSmartImportOpen(true)}
               onClearAll={() => setIsResetConfirmOpen(true)}
             />
           )}
@@ -188,6 +193,15 @@ export default function App() {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onImportSuccess={handleImportCsv}
+      />
+
+      <SmartImportModal
+        isOpen={isSmartImportOpen}
+        onClose={() => setIsSmartImportOpen(false)}
+        onImportSuccess={(res) => {
+          showToast(`Import Agent: ${res.imported_count} transaction(s) recorded!`);
+          setRefreshKey((k) => k + 1);
+        }}
       />
 
       <SettingsModal

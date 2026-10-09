@@ -203,4 +203,27 @@ export const api = {
     fetch(`${API_BASE}/demo/reset`, {
       method: 'POST',
     }).then(handleResponse),
+
+  // Automated Transaction Import Agent
+  previewImportAgent: (text, sourceType = 'auto') =>
+    fetch(`${API_BASE}/agents/import-transactions/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, source_type: sourceType }),
+    }).then(handleResponse),
+
+  commitImportAgent: (transactions, skipDuplicates = true) =>
+    fetch(`${API_BASE}/agents/import-transactions/commit?skip_duplicates=${skipDuplicates}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transactions }),
+    }).then(handleResponse),
+
+  autoImportAgent: (text) =>
+    fetch(`${API_BASE}/agents/import-transactions/auto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    }).then(handleResponse),
 };
+
