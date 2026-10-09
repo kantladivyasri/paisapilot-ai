@@ -381,10 +381,11 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
-    engine: Literal["groq", "gemini", "ollama", "deterministic"]
+    engine: Literal["groq", "gemini", "ollama", "deterministic", "langchain"]
     engine_name: str
     intent: str
     structured_data: Optional[Dict[str, Any]] = None
+    tools_called: Optional[List[str]] = None
     suggested_prompts: List[str] = []
 
 

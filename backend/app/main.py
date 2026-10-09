@@ -89,6 +89,8 @@ def health_check():
         "tagline": "Understand Your Money. Plan Your Future.",
         "currency": "INR (₹)",
         "llm_active": bool(groq_key or gemini_key),
+        "langchain_agent_active": bool(groq_key or gemini_key),
+        "framework": "LangChain Tool-Calling Agent",
         "groq_configured": bool(groq_key),
         "groq_model": get_groq_model() if groq_key else None,
         "gemini_configured": bool(gemini_key),

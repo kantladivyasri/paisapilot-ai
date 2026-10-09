@@ -68,9 +68,9 @@ export default function ChatPage() {
           {
             id: 1,
             sender: 'assistant',
-            text: "Namaste! I'm **Nidhi Pilot AI**, your personal finance assistant powered by Groq LLM and direct SQLite database tools.\n\nAsk me about your weekly spending, salary balances, category comparisons, or affordability simulations!",
-            engine: 'groq',
-            engineName: 'Groq LLM',
+            text: "Namaste! I'm **Nidhi Pilot AI**, your autonomous personal finance assistant powered by LangChain tool-calling agents and real-time database verification.\n\nAsk me about your weekly spending, salary balances, category comparisons, affordability simulations, or month-end forecasts!",
+            engine: 'langchain',
+            engineName: 'LangChain Agent',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           },
         ]);
@@ -80,9 +80,9 @@ export default function ChatPage() {
         {
           id: 1,
           sender: 'assistant',
-          text: "Namaste! I'm **Nidhi Pilot AI**, your personal finance assistant. Ask me questions about your income, spending, or savings plans!",
-          engine: 'groq',
-          engineName: 'Groq LLM',
+          text: "Namaste! I'm **Nidhi Pilot AI**, your autonomous personal finance assistant. Ask me questions about your income, spending, or savings plans!",
+          engine: 'langchain',
+          engineName: 'LangChain Agent',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -115,6 +115,7 @@ export default function ChatPage() {
         engine: res.engine,
         engineName: res.engine_name,
         structuredData: res.structured_data,
+        toolsCalled: res.tools_called || [],
         suggestedPrompts: res.suggested_prompts,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -171,7 +172,7 @@ export default function ChatPage() {
                 </span>
               </h3>
               <p className="text-[11px] text-slate-400">
-                Connected to live database queries • Groq LLM inference
+                Connected to live database queries • LangChain Agent & LLM tools
               </p>
             </div>
           </div>
@@ -219,7 +220,9 @@ export default function ChatPage() {
                     {!isUser && (
                       <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
                         <span className="px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 flex items-center gap-1">
-                          {m.engine === 'groq' ? (
+                          {m.engine === 'langchain' ? (
+                            <Bot className="w-3 h-3 text-emerald-400" />
+                          ) : m.engine === 'groq' ? (
                             <Sparkles className="w-3 h-3 text-teal-400" />
                           ) : m.engine === 'gemini' ? (
                             <Sparkles className="w-3 h-3 text-blue-400" />
@@ -228,6 +231,11 @@ export default function ChatPage() {
                           )}
                           {m.engineName || 'Nidhi Pilot Engine'}
                         </span>
+                        {m.toolsCalled && m.toolsCalled.length > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 flex items-center gap-1 text-[9px]">
+                            🛠️ {m.toolsCalled.length} tool{m.toolsCalled.length > 1 ? 's' : ''} invoked
+                          </span>
+                        )}
                         <span>{m.timestamp}</span>
                       </div>
                     )}

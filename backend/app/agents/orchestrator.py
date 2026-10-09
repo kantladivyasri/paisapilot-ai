@@ -1,4 +1,5 @@
 import calendar
+import logging
 import re
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Tuple
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.agents.analyzer import calculate_analysis, calculate_summary
 from app.agents.budget_agent import get_current_budget
+from app.agents.langchain_agent import run_nidhi_langchain_agent
 from app.agents.period_analyzer import compute_period_report
 from app.agents.prediction_agent import compute_forecast
 from app.agents.salary_service import calculate_salary_dashboard_metrics, get_salary_for_month
@@ -21,6 +23,8 @@ from app.services.llm_service import (
     get_groq_api_key,
     get_groq_model,
 )
+
+logger = logging.getLogger(__name__)
 
 MONTH_MAP = {
     "january": "01", "jan": "01",
@@ -453,8 +457,44 @@ async def route_chat_query(
     db.add(user_msg_record)
     db.commit()
 
-    # Attempt Groq LLM
+    # Retrieve available API keys
     groq_key = get_groq_api_key()
+    gemini_key = get_gemini_api_key()
+
+    # 1. Primary Autonomous Agent: LangChain Tool-Calling Agent
+    if groq_key or gemini_key:
+        try:
+            lc_reply, tools_used, lc_engine_name = await run_nidhi_langchain_agent(
+                query=query,
+                db=db,
+                user_id=user_id,
+                conversation_history=conversation_history,
+                groq_key=groq_key,
+                gemini_key=gemini_key,
+            )
+            if lc_reply:
+                bot_msg = ChatMessage(
+                    user_id=user_id,
+                    role="assistant",
+                    content=lc_reply,
+                    engine="langchain",
+                    intent=intent,
+                )
+                db.add(bot_msg)
+                db.commit()
+                return ChatResponse(
+                    reply=lc_reply,
+                    engine="langchain",
+                    engine_name=f"🤖 Nidhi Pilot LangChain Agent ({lc_engine_name})",
+                    intent=intent,
+                    structured_data=query_data or financial_facts["summary"],
+                    tools_called=tools_used,
+                    suggested_prompts=suggested_prompts,
+                )
+        except Exception as e:
+            logger.warning(f"LangChain agent invocation encountered error, proceeding to fallback: {e}")
+
+    # 2. Fallback: Direct Groq LLM
     if groq_key:
         groq_reply = await generate_groq_response(
             query, financial_facts, api_key=groq_key, conversation_history=conversation_history
