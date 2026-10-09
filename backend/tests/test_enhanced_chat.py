@@ -5,6 +5,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from unittest.mock import patch
+
 from app.database import Base, get_db, run_migrations_and_seed
 from app.main import app
 
@@ -31,8 +33,9 @@ def client():
             db.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:
-        yield c
+    with patch("app.agents.orchestrator.get_groq_api_key", return_value=None):
+        with TestClient(app) as c:
+            yield c
 
     app.dependency_overrides.clear()
     Base.metadata.drop_all(bind=engine)
@@ -133,11 +136,24 @@ def test_enhanced_chat_queries_and_history(client):
     # 11,550 + 3,200 = 14,750
     assert "14,750" in answer or "14750" in answer
 
-    # 7. Check Chat History persistence
+    # 7. Query: "Predict my monthly expenses and savings"
+    res = client.post("/api/chat", json={"message": "Predict my monthly expenses and savings"})
+    assert res.status_code == 200
+    answer = res.json()["reply"]
+    assert "Projected" in answer or "Run-Rate" in answer or "₹" in answer
+    assert "Trajectory" in answer or "Forecast" in answer
+
+    # 8. Query: "Am I spending too much on unwanted things than regular?"
+    res = client.post("/api/chat", json={"message": "Am I spending too much on unwanted things than regular?"})
+    assert res.status_code == 200
+    answer = res.json()["reply"]
+    assert "Unwanted" in answer or "Discretionary" in answer or "Spending" in answer
+
+    # 9. Check Chat History persistence
     hist_res = client.get("/api/chat/history")
     assert hist_res.status_code == 200
     history = hist_res.json()
-    assert len(history) >= 10  # 5 user messages + 5 assistant responses
+    assert len(history) >= 14
 
     # 8. Clear Chat History
     del_res = client.delete("/api/chat/history")

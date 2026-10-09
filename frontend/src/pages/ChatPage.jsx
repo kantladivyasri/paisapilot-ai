@@ -15,6 +15,8 @@ import { api } from '../services/api';
 import { formatINR } from '../utils/formatters';
 
 const ENHANCED_PROMPTS = [
+  'Predict my monthly expenses and savings',
+  'Am I spending too much on unwanted things than regular?',
   'How much money did I spend this week?',
   'What is my biggest expense category this month?',
   'How much money do I have left from my salary?',

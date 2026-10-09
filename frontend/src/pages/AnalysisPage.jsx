@@ -26,6 +26,7 @@ import { formatINR, getCategoryColor } from '../utils/formatters';
 export default function AnalysisPage() {
   const [analysis, setAnalysis] = useState(null);
   const [summary, setSummary] = useState(null);
+  const [forecast, setForecast] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,12 +36,14 @@ export default function AnalysisPage() {
   const fetchAnalysis = async () => {
     setLoading(true);
     try {
-      const [anaData, sumData] = await Promise.all([
+      const [anaData, sumData, foreData] = await Promise.all([
         api.getAnalysis(),
         api.getSummary(),
+        api.getForecast(),
       ]);
       setAnalysis(anaData);
       setSummary(sumData);
+      setForecast(foreData);
     } catch (err) {
       console.error('Failed to load analysis:', err);
     } finally {
@@ -122,6 +125,158 @@ export default function AnalysisPage() {
           </p>
         </div>
       </div>
+
+      {/* AI Predictive Forecast & Discretionary Overspending Engine */}
+      {forecast && (
+        <div className="card-glass rounded-2xl p-6 space-y-6 border border-slate-800 shadow-xl bg-gradient-to-br from-navy-900/90 via-slate-900/95 to-navy-950">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-white">AI Monthly Expense & Savings Forecast</h3>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                    Day {forecast.days_passed} of {forecast.total_days} ({forecast.days_remaining} days left)
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Real-time run-rate projection and unwanted discretionary overspending analysis
+                </p>
+              </div>
+            </div>
+
+            <span
+              className={`text-xs font-bold px-3 py-1 rounded-full border self-start sm:self-auto ${
+                forecast.projected_status === 'healthy'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                  : forecast.projected_status === 'caution'
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                  : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+              }`}
+            >
+              {forecast.projected_status === 'healthy'
+                ? 'Healthy Trajectory'
+                : forecast.projected_status === 'caution'
+                ? 'Caution: Pace Accelerating'
+                : 'Deficit Risk Alert'}
+            </span>
+          </div>
+
+          {/* 4 Forecast KPI Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Projected Total Outflow</span>
+              <span className="text-xl font-black text-white">{formatINR(forecast.projected_expenses)}</span>
+              <span className="text-[11px] text-slate-400 block">
+                Actual spent to date: <b className="text-slate-300">{formatINR(forecast.current_expenses)}</b>
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Projected Month-End Savings</span>
+              <span
+                className={`text-xl font-black ${
+                  forecast.projected_savings >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                }`}
+              >
+                {formatINR(forecast.projected_savings)}
+              </span>
+              <span className="text-[11px] text-slate-400 block">
+                Projected savings rate: <b className="text-teal-400">{forecast.projected_savings_rate}%</b>
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Daily Spending Pace</span>
+              <span className="text-xl font-black text-teal-300">
+                {formatINR(forecast.daily_spending_pace)}/day
+              </span>
+              <span className="text-[11px] text-slate-400 block">
+                Regular baseline: <b className="text-slate-300">{formatINR(forecast.regular_daily_baseline)}/day</b>
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Unwanted / Discretionary Pace</span>
+              <span className="text-xl font-black text-amber-300">
+                {formatINR(forecast.projected_unwanted_spent)}
+              </span>
+              <span className="text-[11px] text-slate-400 block">
+                Regular baseline: <b className="text-slate-300">{formatINR(forecast.regular_unwanted_baseline)}</b>
+              </span>
+            </div>
+          </div>
+
+          {/* Unwanted / Discretionary Overspending Alerts Section */}
+          <div className="pt-2 border-t border-slate-800/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> Unwanted Spending Behavior & Overspending Warnings
+              </h4>
+              <span className="text-[11px] text-slate-400 font-mono">
+                {forecast.unwanted_spending_alerts?.length || 0} Category Alert{(forecast.unwanted_spending_alerts?.length || 0) !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {forecast.unwanted_spending_alerts && forecast.unwanted_spending_alerts.length > 0 ? (
+              <div className="space-y-3">
+                {forecast.unwanted_spending_alerts.map((alert, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-4 rounded-xl border text-xs space-y-2.5 transition-all ${
+                      alert.severity === 'critical'
+                        ? 'bg-rose-500/10 border-rose-500/30'
+                        : 'bg-amber-500/10 border-amber-500/30'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white text-sm">{alert.category}</span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                            alert.severity === 'critical'
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          }`}
+                        >
+                          {alert.severity === 'critical' ? 'Critical Pace' : 'Above Regular Pace'} (+{alert.excess_percentage}%)
+                        </span>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-rose-400">
+                        Excess Outflow: +{formatINR(alert.excess_amount)}
+                      </span>
+                    </div>
+
+                    <p className="text-slate-300 leading-relaxed text-xs">
+                      {alert.message}
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-800/60 text-[11px]">
+                      <div className="flex items-center gap-4 text-slate-400 font-mono">
+                        <span>Spent: <b className="text-slate-200">{formatINR(alert.current_spent)}</b></span>
+                        <span>Regular Baseline: <b className="text-slate-200">{formatINR(alert.regular_baseline)}</b></span>
+                        <span>Projected: <b className="text-amber-300">{formatINR(alert.projected_spent)}</b></span>
+                      </div>
+                      <div className="text-emerald-400 font-semibold flex items-center gap-1">
+                        💡 {alert.recommendation}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  <b>Controlled Discretionary Habits:</b> You are not overspending on unwanted items this month. Shopping, entertainment, and food deliveries are tracking cleanly within regular baseline benchmarks!
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main Breakdown Chart */}
       <div className="card-glass rounded-2xl p-6 space-y-4">

@@ -118,6 +118,9 @@ export const api = {
   getAnalysis: (month) =>
     fetch(`${API_BASE}/analysis${month ? `?month=${month}` : ''}`).then(handleResponse),
 
+  getForecast: (month) =>
+    fetch(`${API_BASE}/analysis/forecast${month ? `?month=${month}` : ''}`).then(handleResponse),
+
   // Budget
   getBudget: (month) =>
     fetch(`${API_BASE}/budget${month ? `?month=${month}` : ''}`).then(handleResponse),

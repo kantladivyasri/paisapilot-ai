@@ -93,10 +93,13 @@ def build_system_prompt(financial_facts: Dict[str, Any], conversation_history: O
         facts_text += f"   • {c['category']}: ₹{c['amount']:,.2f} ({c['percentage']}% of expenses) [{tag}]{limit_str}\n"
 
     if period_info:
+        cat_str = f" for Category '{period_info['category']}'" if period_info.get("category") else ""
+        period_lbl = period_info.get('period_label') or period_info.get('month', 'Specified Period')
+        amt = period_info.get('total_expenses') if period_info.get('total_expenses') is not None else period_info.get('amount', 0)
         facts_text += f"""
-4. PERIOD QUERY RESULTS:
-   • Period: {period_info.get('period_label', 'Specified Period')}
-   • Total Spending: ₹{period_info.get('total_expenses', 0):,.2f}
+4. PERIOD / SPECIFIC QUERY RESULTS:
+   • Period: {period_lbl}{cat_str}
+   • Recorded Spending/Amount: ₹{amt:,.2f}
    • Total Inflow/Income: ₹{period_info.get('total_income', 0):,.2f}
    • Remaining Balance: ₹{period_info.get('remaining_balance', 0):,.2f}
    • Comparison vs Previous: {period_info.get('comparison_text', 'N/A')}
@@ -118,6 +121,33 @@ def build_system_prompt(financial_facts: Dict[str, Any], conversation_history: O
         for g in goals:
             facts_text += f"   • {g['name']}: Saved ₹{g['current_amount']:,.2f} of ₹{g['target_amount']:,.2f} ({g['progress_percentage']}%) | Target Date: {g['target_date']}\n"
 
+    forecast_info = financial_facts.get("forecast", {})
+    if forecast_info:
+        alerts = forecast_info.get("unwanted_spending_alerts", [])
+        alerts_txt = ""
+        for a in alerts:
+            alerts_txt += f"      - {a.get('category')}: Spent ₹{a.get('current_spent', 0):,.2f} so far, projected ₹{a.get('projected_spent', 0):,.2f} (+{a.get('excess_percentage', 0)}% over regular baseline ₹{a.get('regular_baseline', 0):,.2f}). Recommendation: {a.get('recommendation')}\n"
+
+        facts_text += f"""
+7. AI EXPENSE & SAVINGS PREDICTION (FORECAST):
+   • Evaluated Days: {forecast_info.get('days_passed', 0)} of {forecast_info.get('total_days', 30)} ({forecast_info.get('days_remaining', 0)} days remaining)
+   • Daily Spending Pace: ₹{forecast_info.get('daily_spending_pace', 0):,.2f}/day (Regular Baseline: ₹{forecast_info.get('regular_daily_baseline', 0):,.2f}/day)
+   • Projected Month-End Total Expenses: ₹{forecast_info.get('projected_expenses', 0):,.2f}
+   • Projected Month-End Net Savings: ₹{forecast_info.get('projected_savings', 0):,.2f} ({forecast_info.get('projected_savings_rate', 0)}%)
+   • Trajectory Status: {forecast_info.get('projected_status', 'healthy').upper()}
+   • Overspending on Unwanted Items: {forecast_info.get('is_overspending_on_unwanted', False)}
+   • Overspending Summary: {forecast_info.get('overspending_summary', '')}
+   • Discretionary Anomaly Alerts:
+{alerts_txt if alerts_txt else '      None, discretionary pace is safely under control.'}
+"""
+
+    tool_res = financial_facts.get("tool_calculation_result")
+    if tool_res:
+        facts_text += f"""
+8. EXACT VERIFIED DATABASE TOOL ANSWER:
+{tool_res}
+"""
+
     history_text = ""
     if conversation_history:
         history_text = "\nRECENT CONVERSATION CONTEXT:\n"
@@ -131,9 +161,10 @@ def build_system_prompt(financial_facts: Dict[str, Any], conversation_history: O
         "1. STRICT FACTUAL GROUNDING: You must ONLY use the exact financial figures provided in the verified facts below. "
         "NEVER make up balances, invent transactions, or hallucinate numbers. You have verified live access to their database records.\n"
         "2. INDIAN CONTEXT & CURRENCY: Always format money in Indian Rupees (₹) with appropriate Indian comma numbering (e.g. ₹11,000, ₹1,500.00).\n"
-        "3. ACCURATE CALCULATIONS: When asked about affordability, remaining salary, weekly spending, or category totals, cite the exact numbers from the facts below and explain the math step-by-step.\n"
+        "3. ACCURATE CALCULATIONS: When asked about affordability, remaining salary, weekly spending, past months, or category totals, cite the exact numbers from Sections 1-4 and Section 8 below and explain the math step-by-step.\n"
         "4. PRACTICAL & ACTIONABLE: Differentiate between fixed essentials (Rent, Groceries, Utilities) and lifestyle wants (Dining, Shopping), offering realistic, empathetic saving advice.\n"
-        "5. TONE: Warm, encouraging, financially prudent, and clear.\n"
+        "5. PREDICTIVE EXPENSE & UNWANTED SPENDING WARNINGS: When asked to predict monthly expenses/savings or check if they are spending too much on unwanted/wasteful things, cite Section 7 (Forecast). Explicitly warn them if discretionary categories are trending higher than their regular baseline, state the projected month-end excess, and suggest concrete expense cuts.\n"
+        "6. TONE: Warm, encouraging, financially prudent, and clear.\n"
         f"{facts_text}"
         f"{history_text}"
     )

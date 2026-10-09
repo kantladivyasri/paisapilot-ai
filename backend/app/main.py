@@ -20,6 +20,7 @@ from app.schemas import (
     ChatRequest,
     ChatResponse,
     CsvImportResponse,
+    ForecastResponse,
     PeriodReportResponse,
     SalaryCreate,
     SalaryResponse,
@@ -32,6 +33,7 @@ from app.schemas import (
     TransactionUpdate,
 )
 from app.agents.analyzer import calculate_analysis, calculate_summary
+from app.agents.prediction_agent import compute_forecast
 from app.agents.budget_agent import generate_budget_plan, get_current_budget, save_or_update_budget
 from app.agents.categorizer import categorize_transaction, is_category_essential
 from app.agents.orchestrator import route_chat_query
@@ -545,6 +547,15 @@ def get_summary(month: Optional[str] = None, db: Session = Depends(get_db)):
 @app.get("/api/analysis", response_model=AnalysisResponse)
 def get_analysis(month: Optional[str] = None, db: Session = Depends(get_db)):
     return calculate_analysis(db, month)
+
+
+@app.get("/api/analysis/forecast", response_model=ForecastResponse)
+def get_expense_forecast(month: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Predicts monthly expenses and end-of-month savings,
+    and warns if spending too much on unwanted/discretionary items than regular.
+    """
+    return compute_forecast(db, month)
 
 
 # =====================

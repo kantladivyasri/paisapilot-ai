@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.agents.analyzer import calculate_analysis, calculate_summary
 from app.agents.budget_agent import get_current_budget
 from app.agents.period_analyzer import compute_period_report
+from app.agents.prediction_agent import compute_forecast
 from app.agents.salary_service import calculate_salary_dashboard_metrics, get_salary_for_month
 from app.agents.savings_agent import evaluate_goal
 from app.models import Category, ChatMessage, SalaryRecord, SavingsGoal, Transaction
@@ -105,7 +106,11 @@ def extract_category_from_query(query: str, available_categories: List[str]) -> 
 def classify_intent(query: str) -> str:
     """Classifies user question into structured financial intent."""
     q = query.lower()
-    if any(k in q for k in ["this week", "weekly", "spend this week", "past 7 days"]):
+    if any(k in q for k in ["predict", "forecast", "projected", "how much will i spend", "end of the month", "by month-end", "how much will i save"]):
+        return "predict_forecast"
+    elif any(k in q for k in ["unwanted", "too much on unwanted", "unwanted things", "more than regular", "spending more than regular", "wasteful"]):
+        return "unwanted_spending"
+    elif any(k in q for k in ["this week", "weekly", "spend this week", "past 7 days"]):
         return "week_spending"
     elif any(k in q for k in ["this year", "yearly", "total expenses for this year", "spent this year"]):
         return "yearly_expenses"
@@ -381,6 +386,55 @@ def execute_deterministic_tool(
             reply += f"{idx}. **{c.category}**: ₹{c.amount:,.2f} ({c.percentage}%) — [{tag}]\n"
         return reply, suggested_prompts, summary.model_dump()
 
+    # Prediction & Monthly Forecast Tool
+    elif intent == "predict_forecast":
+        fc = compute_forecast(db, current_m, user_id=user_id)
+        reply = (
+            f"🔮 **Monthly Expense & Savings Forecast ({fc.month}):**\n"
+            f"• **Days Evaluated:** {fc.days_passed} of {fc.total_days} days ({fc.days_remaining} days left in cycle)\n"
+            f"• **Expenses Logged So Far:** ₹{fc.current_expenses:,.2f} (Daily Pace: ₹{fc.daily_spending_pace:,.2f}/day)\n"
+            f"• **Projected Month-End Outflow:** ₹{fc.projected_expenses:,.2f}\n"
+            f"• **Projected Month-End Savings:** ₹{fc.projected_savings:,.2f} ({fc.projected_savings_rate}% savings rate)\n"
+            f"• **Projected Trajectory Status:** {fc.projected_status.upper()}\n"
+        )
+        if fc.is_overspending_on_unwanted:
+            reply += f"\n⚠️ **Warning on Unwanted Discretionary Spending:**\n{fc.overspending_summary}\n"
+            for a in fc.unwanted_spending_alerts:
+                reply += (
+                    f"\n• **{a.category}**: Current ₹{a.current_spent:,.2f} ➔ Projected ₹{a.projected_spent:,.2f} "
+                    f"(+{a.excess_percentage}% over regular baseline ₹{a.regular_baseline:,.2f})\n"
+                    f"  *{a.recommendation}*\n"
+                )
+        else:
+            reply += f"\n✅ **Controlled Outflows:** Your discretionary spending is in healthy balance with regular benchmarks."
+        return reply, suggested_prompts, fc.model_dump()
+
+    # Unwanted / Discretionary Overspending Warning Tool
+    elif intent == "unwanted_spending":
+        fc = compute_forecast(db, current_m, user_id=user_id)
+        if fc.is_overspending_on_unwanted:
+            reply = (
+                f"⚠️ **Unwanted / Discretionary Overspending Warning ({fc.month}):**\n"
+                f"{fc.overspending_summary}\n\n"
+                f"**Specific Category Outflow Breakdown:**\n"
+            )
+            for a in fc.unwanted_spending_alerts:
+                reply += (
+                    f"• **{a.category}** [{a.severity.upper()}]:\n"
+                    f"  - Spent so far: ₹{a.current_spent:,.2f} in {fc.days_passed} days\n"
+                    f"  - Regular monthly benchmark: ₹{a.regular_baseline:,.2f}\n"
+                    f"  - Projected month-end spend: ₹{a.projected_spent:,.2f} (+₹{a.excess_amount:,.2f} or +{a.excess_percentage}% higher than regular)\n"
+                    f"  - Actionable Advice: {a.recommendation}\n\n"
+                )
+        else:
+            reply = (
+                f"✅ **No Excessive Unwanted Spending Detected!**\n"
+                f"You have spent ₹{fc.total_unwanted_spent:,.2f} on discretionary/unwanted items so far in {fc.month}. "
+                f"At your current pace of ₹{fc.daily_spending_pace:,.2f}/day, your projected month-end outflow is ₹{fc.projected_expenses:,.2f}, "
+                f"which is safely within your regular benchmark of ₹{fc.regular_unwanted_baseline:,.2f}. Keep up the disciplined habit!"
+            )
+        return reply, suggested_prompts, fc.model_dump()
+
     # Default: General cash flow overview
     summary = calculate_summary(db, current_m, user_id=user_id)
     reply = (
@@ -410,6 +464,7 @@ async def route_chat_query(
     analysis = calculate_analysis(db, current_m, user_id)
     budget = get_current_budget(db, current_m, user_id)
     salary_record = get_salary_for_month(db, current_m, user_id)
+    forecast = compute_forecast(db, current_m, user_id)
     goals = db.query(SavingsGoal).filter(SavingsGoal.user_id == user_id).all()
     evaluated_goals = [evaluate_goal(g, db).model_dump() for g in goals]
 
@@ -425,8 +480,10 @@ async def route_chat_query(
         "discretionary_spending": analysis.discretionary_spending,
         "budget": budget.model_dump() if budget else {"is_set": False},
         "salary_info": {"amount": salary_record.amount if salary_record else 0.0},
+        "forecast": forecast.model_dump(),
         "goals": evaluated_goals,
         "period_query": query_data,
+        "tool_calculation_result": det_reply,
     }
 
     # Load recent conversation history (last 5 messages)

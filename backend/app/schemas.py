@@ -211,6 +211,45 @@ class AnalysisResponse(BaseModel):
 
 
 # =====================
+# Prediction & Forecasting Schemas (Monthly Expenses & Savings, Unwanted Spending)
+# =====================
+
+class UnwantedSpendingAlert(BaseModel):
+    category: str
+    is_essential: bool
+    current_spent: float
+    regular_baseline: float
+    projected_spent: float
+    excess_amount: float
+    excess_percentage: float
+    severity: Literal["warning", "critical"]
+    message: str
+    recommendation: str
+
+
+class ForecastResponse(BaseModel):
+    month: str
+    days_passed: int
+    days_remaining: int
+    total_days: int
+    current_expenses: float
+    current_income: float
+    current_savings: float
+    projected_expenses: float
+    projected_savings: float
+    projected_savings_rate: float
+    projected_status: Literal["healthy", "caution", "deficit_risk"]
+    daily_spending_pace: float
+    regular_daily_baseline: float
+    unwanted_spending_alerts: List[UnwantedSpendingAlert]
+    total_unwanted_spent: float
+    projected_unwanted_spent: float
+    regular_unwanted_baseline: float
+    is_overspending_on_unwanted: bool
+    overspending_summary: str
+
+
+# =====================
 # Period-Based Reports (Daily, Weekly, Monthly, Yearly, Custom)
 # =====================
 
