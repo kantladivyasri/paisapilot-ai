@@ -71,7 +71,23 @@ Nidhi Pilot AI is a full-stack, hackathon-ready intelligent personal financial p
 - Node.js (v18+) and npm
 - Python (v3.10+)
 
-### 1. Backend Setup & Startup
+### ⚡ Option A: One-Click Automated Setup (Recommended)
+
+From the project root:
+
+1. **Install everything automatically:**
+   - **Double-click `install.bat`** (or run `.\install.ps1` in PowerShell)
+   - Sets up Python `.venv`, installs all backend dependencies (FastAPI, LangChain, Groq, SQLAlchemy), and installs all frontend npm packages.
+
+2. **Start both services with one click:**
+   - **Double-click `start.bat`** (or run `.\start.ps1` in PowerShell)
+   - Launches both the FastAPI backend (`http://localhost:8000`) and the Vite React frontend (`http://localhost:5173`) in synchronized processes and automatically opens your browser.
+
+---
+
+### 🛠️ Option B: Manual Setup & Startup
+
+#### 1. Backend Setup & Startup
 
 ```powershell
 # Navigate to the backend directory
@@ -88,11 +104,10 @@ python -m venv .venv
 # Linux / macOS:
 source .venv/bin/activate
 
-# Install dependencies
+# Install dependencies (includes LangChain, Groq, Google GenAI)
 pip install -r requirements.txt
 
 # (Optional) Set your Groq API Key
-# Copy .env.example to .env and configure GROQ_API_KEY
 copy .env.example .env
 
 # Run backend API server on port 8000
