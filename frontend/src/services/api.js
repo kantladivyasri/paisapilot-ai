@@ -5,7 +5,13 @@ async function handleResponse(res) {
     let errorDetail = 'An unexpected error occurred';
     try {
       const errorJson = await res.json();
-      errorDetail = errorJson.detail || errorJson.message || errorDetail;
+      if (Array.isArray(errorJson.detail)) {
+        errorDetail = errorJson.detail.map((e) => e.msg || JSON.stringify(e)).join('; ');
+      } else if (typeof errorJson.detail === 'object' && errorJson.detail !== null) {
+        errorDetail = JSON.stringify(errorJson.detail);
+      } else {
+        errorDetail = errorJson.detail || errorJson.message || errorDetail;
+      }
     } catch {
       errorDetail = await res.text();
     }

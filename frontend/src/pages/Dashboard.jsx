@@ -226,13 +226,23 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
                 💵 Your Money This Month
               </span>
               {salaryData?.current_month_salary > 0 ? (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
-                  Active
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsSalaryModalOpen(true)}
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold hover:bg-emerald-500/20 cursor-pointer transition-colors"
+                  title="Click to update salary"
+                >
+                  Active • Click to Edit ✍️
+                </button>
               ) : (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">
-                  Salary Not Set
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsSalaryModalOpen(true)}
+                  className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold hover:bg-amber-500/30 transition-colors cursor-pointer animate-pulse"
+                  title="Click to enter your monthly salary"
+                >
+                  Salary Not Set • Click to Enter ✍️
+                </button>
               )}
             </div>
             <p className="text-xs text-slate-400">
@@ -242,8 +252,15 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4">
             {/* Money In */}
-            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">🟢 Money In</span>
+            <div
+              onClick={() => setIsSalaryModalOpen(true)}
+              title="Click to enter or update your monthly salary"
+              className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-900 cursor-pointer transition-all group select-none"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">🟢 Money In</span>
+                <span className="text-[9px] text-emerald-400 font-semibold opacity-75 group-hover:opacity-100 group-hover:underline">Edit ✍️</span>
+              </div>
               <span className="text-lg font-black text-emerald-400 block mt-0.5">
                 {salaryData?.current_month_salary > 0
                   ? formatINR(salaryData.current_month_salary)
