@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 /**
- * Secure, beautifully styled Markdown renderer for PaisaPilot AI chatbot messages.
+ * Secure, beautifully styled Markdown renderer for Nidhi Pilot AI chatbot messages.
  * Uses react-markdown and remark-gfm with custom Tailwind typography mapping.
  * Protects against raw HTML execution while properly formatting:
  * - Headings (h1, h2, h3, h4)

@@ -1,8 +1,8 @@
-# PaisaPilot AI — Intelligent Personal Finance Planning Agent
+# Nidhi Pilot AI — Intelligent Personal Finance Planning Agent
 
 > **Understand Your Money. Plan Your Future.**
 
-PaisaPilot AI is a full-stack, hackathon-ready intelligent personal financial planning web application tailored for Indian students, salaried professionals, and individuals seeking financial clarity. It converts raw income/expense transactions into structured financial insights, deterministic budgeting plans, savings targets, and interactive AI assistance.
+Nidhi Pilot AI is a full-stack, hackathon-ready intelligent personal financial planning web application tailored for Indian students, salaried professionals, and individuals seeking financial clarity. It converts raw income/expense transactions into structured financial insights, deterministic budgeting plans, savings targets, and interactive AI assistance.
 
 ---
 

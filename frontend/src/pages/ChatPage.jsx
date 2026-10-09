@@ -68,7 +68,7 @@ export default function ChatPage() {
           {
             id: 1,
             sender: 'assistant',
-            text: "Namaste! I'm **PaisaPilot AI**, your personal finance assistant powered by Groq LLM and direct SQLite database tools.\n\nAsk me about your weekly spending, salary balances, category comparisons, or affordability simulations!",
+            text: "Namaste! I'm **Nidhi Pilot AI**, your personal finance assistant powered by Groq LLM and direct SQLite database tools.\n\nAsk me about your weekly spending, salary balances, category comparisons, or affordability simulations!",
             engine: 'groq',
             engineName: 'Groq LLM',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -80,7 +80,7 @@ export default function ChatPage() {
         {
           id: 1,
           sender: 'assistant',
-          text: "Namaste! I'm **PaisaPilot AI**, your personal finance assistant. Ask me questions about your income, spending, or savings plans!",
+          text: "Namaste! I'm **Nidhi Pilot AI**, your personal finance assistant. Ask me questions about your income, spending, or savings plans!",
           engine: 'groq',
           engineName: 'Groq LLM',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -165,7 +165,7 @@ export default function ChatPage() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                PaisaPilot AI Financial Assistant
+                Nidhi Pilot AI Financial Assistant
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   Tool-Grounded & Context-Aware
                 </span>
@@ -226,7 +226,7 @@ export default function ChatPage() {
                           ) : (
                             <Zap className="w-3 h-3 text-emerald-400" />
                           )}
-                          {m.engineName || 'PaisaPilot Engine'}
+                          {m.engineName || 'Nidhi Pilot Engine'}
                         </span>
                         <span>{m.timestamp}</span>
                       </div>

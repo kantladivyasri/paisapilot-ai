@@ -13,12 +13,12 @@ import {
 
 export default function Sidebar({ activeTab, setActiveTab, onOpenSettings, groqConfigured }) {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'transactions', label: 'Transactions & CSV', icon: Receipt },
-    { id: 'analysis', label: 'AI Spending Analysis', icon: PieChart },
-    { id: 'budget', label: 'Budget Planner', icon: Compass },
+    { id: 'dashboard', label: 'Money Overview', icon: LayoutDashboard },
+    { id: 'transactions', label: 'All Transactions', icon: Receipt },
+    { id: 'analysis', label: 'Spending Insights', icon: PieChart },
+    { id: 'budget', label: 'Monthly Budget', icon: Compass },
     { id: 'goals', label: 'Savings Goals', icon: Target },
-    { id: 'chat', label: 'AI Finance Assistant', icon: Bot, badge: 'AI' },
+    { id: 'chat', label: 'AI Money Helper', icon: Bot, badge: 'AI' },
   ];
 
   return (
@@ -32,7 +32,7 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenSettings, groqC
             </div>
             <div>
               <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-1.5">
-                PaisaPilot <span className="text-emerald-400 font-semibold text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">AI</span>
+                Nidhi Pilot <span className="text-emerald-400 font-semibold text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">AI</span>
               </h1>
               <p className="text-[11px] text-slate-400 font-medium tracking-wide">
                 Understand Money. Plan Future.

@@ -87,23 +87,23 @@ export default function AnalysisPage() {
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      {/* Top Banner: Essential vs Discretionary Breakdown */}
+      {/* Top Banner: Needs vs Wants Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Essential Card */}
         <div className="card-glass rounded-2xl p-6 border-l-4 border-l-blue-500 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4" /> Essential Obligations
+              <ShieldCheck className="w-4 h-4" /> 🛡️ Living Essentials (Needs)
             </span>
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-              {analysis.essential_percentage}% of Outflow
+              {analysis.essential_percentage}% of spending
             </span>
           </div>
           <div className="flex items-baseline gap-2">
             <h3 className="text-3xl font-black text-white">{formatINR(analysis.essential_spending)}</h3>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Non-negotiable living costs (Rent, Groceries, Electricity, Commute, Medicine). These form your bare-minimum survival baseline.
+            Must-have basic living expenses like groceries, rent, utilities, commute, and medicine.
           </p>
         </div>
 
@@ -111,24 +111,24 @@ export default function AnalysisPage() {
         <div className="card-glass rounded-2xl p-6 border-l-4 border-l-amber-500 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Sliders className="w-4 h-4" /> Discretionary Lifestyle
+              <Sliders className="w-4 h-4" /> 🛍️ Fun & Shopping (Wants)
             </span>
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              {analysis.discretionary_percentage}% of Outflow
+              {analysis.discretionary_percentage}% of spending
             </span>
           </div>
           <div className="flex items-baseline gap-2">
             <h3 className="text-3xl font-black text-white">{formatINR(analysis.discretionary_spending)}</h3>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Flexible spending (Food delivery, Dining, Shopping, OTT subscriptions). Trimming this category yields immediate monthly cash surplus.
+            Lifestyle spending like dining out, shopping, and entertainment. Cutting back here saves you money immediately.
           </p>
         </div>
       </div>
 
-      {/* AI Predictive Forecast & Discretionary Overspending Engine */}
+      {/* Month-End Money Forecast */}
       {forecast && (
-        <div className="card-glass rounded-2xl p-6 space-y-6 border border-slate-800 shadow-xl bg-gradient-to-br from-navy-900/90 via-slate-900/95 to-navy-950">
+        <div className="card-glass rounded-2xl p-6 space-y-5 border border-slate-800 shadow-xl bg-gradient-to-br from-navy-900/90 via-slate-900/95 to-navy-950">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400">
@@ -136,13 +136,13 @@ export default function AnalysisPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-white">AI Monthly Expense & Savings Forecast</h3>
+                  <h3 className="text-sm font-bold text-white">Month-End Spending & Savings Forecast</h3>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
                     Day {forecast.days_passed} of {forecast.total_days} ({forecast.days_remaining} days left)
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Real-time run-rate projection and unwanted discretionary overspending analysis
+                  Predicts your final spending and savings based on how fast you are spending daily
                 </p>
               </div>
             </div>
@@ -157,25 +157,25 @@ export default function AnalysisPage() {
               }`}
             >
               {forecast.projected_status === 'healthy'
-                ? 'Healthy Trajectory'
+                ? 'On Track 👍'
                 : forecast.projected_status === 'caution'
-                ? 'Caution: Pace Accelerating'
-                : 'Deficit Risk Alert'}
+                ? 'Caution: Spending Faster'
+                : 'Deficit Risk 🔴'}
             </span>
           </div>
 
           {/* 4 Forecast KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Projected Total Outflow</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Expected Total Spending</span>
               <span className="text-xl font-black text-white">{formatINR(forecast.projected_expenses)}</span>
               <span className="text-[11px] text-slate-400 block">
-                Actual spent to date: <b className="text-slate-300">{formatINR(forecast.current_expenses)}</b>
+                Spent so far: <b className="text-slate-300">{formatINR(forecast.current_expenses)}</b>
               </span>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Projected Month-End Savings</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Expected Savings</span>
               <span
                 className={`text-xl font-black ${
                   forecast.projected_savings >= 0 ? 'text-emerald-400' : 'text-rose-400'
@@ -184,93 +184,76 @@ export default function AnalysisPage() {
                 {formatINR(forecast.projected_savings)}
               </span>
               <span className="text-[11px] text-slate-400 block">
-                Projected savings rate: <b className="text-teal-400">{forecast.projected_savings_rate}%</b>
+                Estimated rate: <b className="text-teal-400">{forecast.projected_savings_rate}%</b>
               </span>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Daily Spending Pace</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Daily Spending Speed</span>
               <span className="text-xl font-black text-teal-300">
-                {formatINR(forecast.daily_spending_pace)}/day
+                {formatINR(forecast.daily_spending_pace)} / day
               </span>
               <span className="text-[11px] text-slate-400 block">
-                Regular baseline: <b className="text-slate-300">{formatINR(forecast.regular_daily_baseline)}/day</b>
+                Normal speed: <b className="text-slate-300">{formatINR(forecast.regular_daily_baseline)}/day</b>
               </span>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Unwanted / Discretionary Pace</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Shopping & Fun Spending</span>
               <span className="text-xl font-black text-amber-300">
                 {formatINR(forecast.projected_unwanted_spent)}
               </span>
               <span className="text-[11px] text-slate-400 block">
-                Regular baseline: <b className="text-slate-300">{formatINR(forecast.regular_unwanted_baseline)}</b>
+                Normal benchmark: <b className="text-slate-300">{formatINR(forecast.regular_unwanted_baseline)}</b>
               </span>
             </div>
           </div>
 
-          {/* Unwanted / Discretionary Overspending Alerts Section */}
+          {/* Alert Notice Section */}
           <div className="pt-2 border-t border-slate-800/80 space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> Unwanted Spending Behavior & Overspending Warnings
-              </h4>
-              <span className="text-[11px] text-slate-400 font-mono">
-                {forecast.unwanted_spending_alerts?.length || 0} Category Alert{(forecast.unwanted_spending_alerts?.length || 0) !== 1 ? 's' : ''}
-              </span>
-            </div>
-
             {forecast.unwanted_spending_alerts && forecast.unwanted_spending_alerts.length > 0 ? (
               <div className="space-y-3">
-                {forecast.unwanted_spending_alerts.map((alert, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-4 rounded-xl border text-xs space-y-2.5 transition-all ${
-                      alert.severity === 'critical'
-                        ? 'bg-rose-500/10 border-rose-500/30'
-                        : 'bg-amber-500/10 border-amber-500/30'
-                    }`}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-sm">{alert.category}</span>
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                            alert.severity === 'critical'
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          }`}
-                        >
-                          {alert.severity === 'critical' ? 'Critical Pace' : 'Above Regular Pace'} (+{alert.excess_percentage}%)
+                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>
+                      <b>Notice:</b> {forecast.unwanted_spending_alerts.length} categories have higher than normal spending.
+                      Check the <b>Notice Bell</b> at the top anytime for quick alerts.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {forecast.unwanted_spending_alerts.map((alert, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-4 rounded-xl border text-xs space-y-2 transition-all ${
+                        alert.severity === 'critical'
+                          ? 'bg-rose-500/10 border-rose-500/30'
+                          : 'bg-amber-500/10 border-amber-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between font-bold">
+                        <span className="text-white text-sm">{alert.category}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full uppercase bg-amber-500/20 text-amber-300">
+                          +{alert.excess_percentage}% high
                         </span>
                       </div>
-                      <span className="text-xs font-mono font-bold text-rose-400">
-                        Excess Outflow: +{formatINR(alert.excess_amount)}
-                      </span>
-                    </div>
-
-                    <p className="text-slate-300 leading-relaxed text-xs">
-                      {alert.message}
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-800/60 text-[11px]">
-                      <div className="flex items-center gap-4 text-slate-400 font-mono">
-                        <span>Spent: <b className="text-slate-200">{formatINR(alert.current_spent)}</b></span>
-                        <span>Regular Baseline: <b className="text-slate-200">{formatINR(alert.regular_baseline)}</b></span>
-                        <span>Projected: <b className="text-amber-300">{formatINR(alert.projected_spent)}</b></span>
-                      </div>
-                      <div className="text-emerald-400 font-semibold flex items-center gap-1">
+                      <p className="text-slate-300 text-xs leading-relaxed">
+                        Spent <b>{formatINR(alert.current_spent)}</b> so far. Likely to reach <b>{formatINR(alert.projected_spent)}</b>.
+                      </p>
+                      <p className="text-emerald-400 font-medium text-[11px] pt-1 border-t border-slate-800/60">
                         💡 {alert.recommendation}
-                      </div>
+                      </p>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-center gap-2">
+              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>
-                  <b>Controlled Discretionary Habits:</b> You are not overspending on unwanted items this month. Shopping, entertainment, and food deliveries are tracking cleanly within regular baseline benchmarks!
+                  <b>Spending Under Control:</b> You are not overspending on unwanted items this month. Shopping and entertainment are within normal limits!
                 </span>
               </div>
             )}

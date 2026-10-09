@@ -61,7 +61,7 @@ load_dotenv()
 run_migrations_and_seed(engine)
 
 app = FastAPI(
-    title="PaisaPilot AI API",
+    title="Nidhi Pilot AI API",
     description="Intelligent Personal Finance & Expense Management System",
     version="2.0.0",
 )
@@ -85,7 +85,7 @@ def health_check():
     gemini_key = get_gemini_api_key()
     return {
         "status": "ok",
-        "app": "PaisaPilot AI",
+        "app": "Nidhi Pilot AI",
         "tagline": "Understand Your Money. Plan Your Future.",
         "currency": "INR (₹)",
         "llm_active": bool(groq_key or gemini_key),

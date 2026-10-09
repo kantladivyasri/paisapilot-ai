@@ -363,7 +363,7 @@ def execute_deterministic_tool(
             reply = (
                 f"You have spent **₹{fc.total_unwanted_spent:,.2f}** on discretionary items so far in {fc.month}. "
                 f"Historical data is currently insufficient to establish a regular spending baseline. "
-                f"Logging transactions across multiple months will allow PaisaPilot to calculate your personal baseline."
+                f"Logging transactions across multiple months will allow Nidhi Pilot to calculate your personal baseline."
             )
         elif fc.is_overspending_on_unwanted:
             reply = f"### Discretionary Spending Alert ({fc.month})\n\n{fc.overspending_summary}\n\n"
@@ -538,7 +538,7 @@ async def route_chat_query(
     return ChatResponse(
         reply=det_reply,
         engine="deterministic",
-        engine_name="⚡ PaisaPilot Financial Rule Engine (Deterministic)",
+        engine_name="⚡ Nidhi Pilot Financial Rule Engine (Deterministic)",
         intent=intent,
         structured_data=query_data or financial_facts["summary"],
         suggested_prompts=suggested_prompts,

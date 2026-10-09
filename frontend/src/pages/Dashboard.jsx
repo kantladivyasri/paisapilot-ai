@@ -9,13 +9,11 @@ import {
   ArrowRight,
   PlusCircle,
   FileSpreadsheet,
-  CheckCircle2,
   Calendar,
-  Layers,
-  ArrowUpRight,
-  ArrowDownRight,
   Tags,
-  SlidersHorizontal,
+  Bell,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   PieChart,
@@ -36,11 +34,11 @@ import { api } from '../services/api';
 import { formatINR, formatDate, getCategoryColor } from '../utils/formatters';
 
 const PERIOD_OPTIONS = [
-  { id: 'daily', label: 'Daily' },
-  { id: 'weekly', label: 'Weekly' },
-  { id: 'monthly', label: 'Monthly' },
-  { id: 'yearly', label: 'Yearly' },
-  { id: 'custom', label: 'Custom Range' },
+  { id: 'daily', label: 'Today' },
+  { id: 'weekly', label: 'This Week' },
+  { id: 'monthly', label: 'This Month' },
+  { id: 'yearly', label: 'This Year' },
+  { id: 'custom', label: 'Custom' },
 ];
 
 export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
@@ -53,6 +51,7 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
   const [forecast, setForecast] = useState(null);
   const [recentTxns, setRecentTxns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showWarningDetails, setShowWarningDetails] = useState(false);
 
   // Modals
   const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
@@ -109,7 +108,7 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-3 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin"></div>
           <span className="text-xs text-slate-400 font-medium tracking-wide">
-            Loading real financial calculations...
+            Loading your money details...
           </span>
         </div>
       </div>
@@ -133,17 +132,17 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
   const trendData = currentP?.trend_data || [];
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      {/* Top Controls: Period Selection & Action Triggers */}
+    <div className="p-6 sm:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto">
+      {/* Top Controls: Friendly Period Switcher & Setup Buttons */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-800">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-white tracking-tight">Financial Overview</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+            <span>Money Overview</span>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              Live DB Records
+              Live Data
             </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-0.5">
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
             {currentP?.period_label || 'Current Period'} ({currentP?.start_date} to {currentP?.end_date})
           </p>
         </div>
@@ -173,7 +172,7 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-600 transition-colors shadow-sm"
           >
             <Tags className="w-3.5 h-3.5 text-teal-400" />
-            Categories
+            <span>Categories</span>
           </button>
 
           {/* Set Salary Trigger */}
@@ -183,7 +182,7 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-navy-950 hover:opacity-90 transition-opacity shadow-sm"
           >
             <Wallet className="w-3.5 h-3.5" />
-            {salaryData?.current_month_salary > 0 ? 'Update Salary' : 'Set Salary'}
+            <span>{salaryData?.current_month_salary > 0 ? 'Edit Salary' : 'Set Salary'}</span>
           </button>
         </div>
       </div>
@@ -192,7 +191,7 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
       {periodType === 'custom' && (
         <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl bg-slate-950/70 border border-slate-800 animate-in fade-in duration-200">
           <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="text-xs font-semibold text-slate-300">Custom Date Range:</span>
+          <span className="text-xs font-semibold text-slate-300">Choose custom dates:</span>
           <div className="flex items-center gap-2 text-xs">
             <input
               type="date"
@@ -213,18 +212,18 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
             onClick={fetchDashboardData}
             className="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-500 text-navy-950 hover:bg-emerald-400"
           >
-            Apply
+            Show
           </button>
         </div>
       )}
 
-      {/* Monthly Salary & Live Balance Card */}
-      <div className="p-5 rounded-2xl bg-gradient-to-br from-navy-900 via-navy-900 to-slate-900 border border-slate-800 shadow-xl">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      {/* Simple "Your Money This Month" Salary Card */}
+      <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-navy-900 via-navy-900 to-slate-900 border border-slate-800 shadow-xl">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-teal-400 uppercase tracking-wider">
-                Monthly Salary Cash Flow ({currentMonthStr})
+                💵 Your Money This Month
               </span>
               {salaryData?.current_month_salary > 0 ? (
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
@@ -232,74 +231,86 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
                 </span>
               ) : (
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">
-                  Salary Not Configured
+                  Salary Not Set
                 </span>
               )}
             </div>
             <p className="text-xs text-slate-400">
-              Formula: Recorded Salary - Total Monthly Outflow = Real Available Buffer
+              Money In (Salary) minus Money Spent = Money Left in your pocket
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-6">
-            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Monthly Salary</span>
-              <span className="text-base font-black text-emerald-400">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4">
+            {/* Money In */}
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">🟢 Money In</span>
+              <span className="text-lg font-black text-emerald-400 block mt-0.5">
                 {salaryData?.current_month_salary > 0
                   ? formatINR(salaryData.current_month_salary)
-                  : '₹0.00'}
+                  : '₹0'}
               </span>
+              <span className="text-[10px] text-slate-500">Monthly Salary</span>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Month Expenses</span>
-              <span className="text-base font-black text-rose-400">
+            {/* Money Spent */}
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">🔴 Money Spent</span>
+              <span className="text-lg font-black text-rose-400 block mt-0.5">
                 {formatINR(salaryData?.total_expenses || 0)}
               </span>
+              <span className="text-[10px] text-slate-500">This Month</span>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Remaining Balance</span>
+            {/* Money Left */}
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">💰 Money Left</span>
               <span
-                className={`text-base font-black ${
+                className={`text-lg font-black block mt-0.5 ${
                   (salaryData?.remaining_balance || 0) >= 0 ? 'text-teal-300' : 'text-rose-400'
                 }`}
               >
                 {formatINR(salaryData?.remaining_balance || 0)}
               </span>
+              <span className="text-[10px] text-slate-500">
+                {(salaryData?.remaining_balance || 0) >= 0 ? 'Safe to Spend' : 'In Deficit'}
+              </span>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Savings Rate</span>
+            {/* Savings Habit */}
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">⭐ Saved</span>
               <span
-                className={`text-base font-black ${
+                className={`text-lg font-black block mt-0.5 ${
                   (salaryData?.savings_rate || 0) >= 20 ? 'text-emerald-400' : 'text-amber-400'
                 }`}
               >
                 {salaryData?.savings_rate || 0}%
+              </span>
+              <span className="text-[10px] text-slate-500">
+                {(salaryData?.savings_rate || 0) >= 20 ? 'Great Habit!' : 'Can improve'}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* AI Expense & Savings Prediction + Unwanted Spending Monitor */}
+      {/* Clean Month-End Forecast Card (Alerts consolidated to top Notice Bell) */}
       {forecast && (
-        <div className="card-glass rounded-2xl p-6 space-y-5 border border-slate-800 shadow-xl bg-gradient-to-br from-navy-900/95 via-slate-900/90 to-navy-950">
+        <div className="card-glass rounded-2xl p-5 sm:p-6 space-y-4 border border-slate-800 shadow-xl bg-gradient-to-br from-navy-900/90 via-slate-900/90 to-navy-950">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400">
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-4 h-4" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-white">AI Monthly Expense & Savings Forecast</h3>
+                  <h3 className="text-sm font-bold text-white">Month-End Money Forecast</h3>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                    {forecast.days_passed}/{forecast.total_days} Days Elapsed
+                    Day {forecast.days_passed} of {forecast.total_days}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Predictive run-rate modeling & unwanted discretionary spending detection
+                  How much you are likely to spend and save by the end of this month
                 </p>
               </div>
             </div>
@@ -315,98 +326,101 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
                 }`}
               >
                 {forecast.projected_status === 'healthy'
-                  ? 'Healthy Trajectory'
+                  ? 'On Track 👍'
                   : forecast.projected_status === 'caution'
-                  ? 'Caution: Pace Accelerating'
-                  : 'Deficit Risk Alert'}
+                  ? 'Caution: Spending Faster'
+                  : 'Deficit Risk 🔴'}
               </span>
             </div>
           </div>
 
-          {/* 4 Stat Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Projected Total Outflow</span>
-              <span className="text-lg font-black text-white">
+          {/* 4 Clean Metric Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-0.5">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Expected Total Spending</span>
+              <span className="text-base sm:text-lg font-black text-white block">
                 {formatINR(forecast.projected_expenses)}
               </span>
               <span className="text-[11px] text-slate-400 block">
-                Spent so far: <b className="text-slate-300">{formatINR(forecast.current_expenses)}</b>
+                Already spent: <b className="text-slate-300">{formatINR(forecast.current_expenses)}</b>
               </span>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Projected Month-End Savings</span>
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-0.5">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Expected Savings at Month-End</span>
               <span
-                className={`text-lg font-black ${
+                className={`text-base sm:text-lg font-black block ${
                   forecast.projected_savings >= 0 ? 'text-emerald-400' : 'text-rose-400'
                 }`}
               >
                 {formatINR(forecast.projected_savings)}
               </span>
               <span className="text-[11px] text-slate-400 block">
-                Projected rate: <b className="text-teal-400">{forecast.projected_savings_rate}%</b>
+                Estimated rate: <b className="text-teal-400">{forecast.projected_savings_rate}%</b>
               </span>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Daily Spending Pace</span>
-              <span className="text-lg font-black text-teal-300">
-                {formatINR(forecast.daily_spending_pace)}/day
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-0.5">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Daily Spending Speed</span>
+              <span className="text-base sm:text-lg font-black text-teal-300 block">
+                {formatINR(forecast.daily_spending_pace)} / day
               </span>
               <span className="text-[11px] text-slate-400 block">
-                Regular baseline: <b className="text-slate-300">{formatINR(forecast.regular_daily_baseline)}/day</b>
+                Normal speed: <b className="text-slate-300">{formatINR(forecast.regular_daily_baseline)}/day</b>
               </span>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Discretionary / Unwanted Outflow</span>
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-0.5">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Shopping & Fun Spending</span>
               <span
-                className={`text-lg font-black ${
+                className={`text-base sm:text-lg font-black block ${
                   forecast.is_overspending_on_unwanted ? 'text-amber-400' : 'text-slate-200'
                 }`}
               >
                 {formatINR(forecast.total_unwanted_spent)}
               </span>
               <span className="text-[11px] text-slate-400 block">
-                Projected: <b className="text-slate-300">{formatINR(forecast.projected_unwanted_spent)}</b>
+                Expected: <b className="text-slate-300">{formatINR(forecast.projected_unwanted_spent)}</b>
               </span>
             </div>
           </div>
 
-          {/* Unwanted Overspending Warning Alert Banner */}
+          {/* Simple, Non-Intrusive Notice Pointer (Directs user to top Notice Bell) */}
           {forecast.is_overspending_on_unwanted && (
-            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-3 animate-in fade-in duration-200">
-              <div className="flex items-start gap-2.5">
-                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-                    Unwanted / Discretionary Spending Warning
-                  </h4>
-                  <p className="text-xs text-amber-200/90 leading-relaxed font-medium">
-                    {forecast.overspending_summary}
-                  </p>
+            <div className="pt-2">
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 text-amber-300">
+                  <Bell className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>
+                    <b>Notice:</b> You have spending alerts. Tap the <b>Bell icon</b> at the top anytime to view details and advice.
+                  </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowWarningDetails(!showWarningDetails)}
+                  className="text-xs text-amber-300 hover:text-white font-semibold flex items-center gap-1 self-start sm:self-auto"
+                >
+                  <span>{showWarningDetails ? 'Hide Details' : 'View Details'}</span>
+                  {showWarningDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                </button>
               </div>
 
-              {forecast.unwanted_spending_alerts && forecast.unwanted_spending_alerts.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+              {/* Optional Collapsible Detail List if user explicitly clicks */}
+              {showWarningDetails && forecast.unwanted_spending_alerts && (
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2.5 animate-in fade-in duration-150">
                   {forecast.unwanted_spending_alerts.map((alert, idx) => (
                     <div
                       key={idx}
-                      className="p-3 rounded-lg bg-slate-950/80 border border-amber-500/20 text-xs space-y-1.5"
+                      className="p-3 rounded-xl bg-slate-950/90 border border-amber-500/30 text-xs space-y-1"
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-white flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                          {alert.category}
-                        </span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                          +{alert.excess_percentage}% over regular
+                      <div className="flex items-center justify-between font-bold text-white">
+                        <span>{alert.category}</span>
+                        <span className="text-[10px] text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full">
+                          +{alert.excess_percentage}% high
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-300 leading-snug">
-                        Spent <b>{formatINR(alert.current_spent)}</b> in {forecast.days_passed} days. Projected to hit <b>{formatINR(alert.projected_spent)}</b> vs regular benchmark of {formatINR(alert.regular_baseline)}.
+                      <p className="text-[11px] text-slate-300">
+                        Spent {formatINR(alert.current_spent)}. Normal benchmark is {formatINR(alert.regular_baseline)}.
                       </p>
                       <p className="text-[11px] text-teal-300 font-medium">
                         💡 {alert.recommendation}
@@ -420,61 +434,61 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
         </div>
       )}
 
-      {/* KPI Cards Row for Selected Period */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* 4 Friendly KPI Cards for the chosen period */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title={`${currentP?.period_label || 'Period'} Inflow`}
+          title="Total Money In"
           amount={currentP?.total_income || 0}
-          subtitle={`Compared to ${previousP?.period_label || 'prior'}: ${formatINR(comparison?.previous_income || 0)}`}
+          subtitle={`Previous: ${formatINR(comparison?.previous_income || 0)}`}
           icon={TrendingUp}
-          badgeText="Total Inflow"
+          badgeText="Inflow"
           badgeType="positive"
         />
         <StatCard
-          title={`${currentP?.period_label || 'Period'} Outflow`}
+          title="Total Money Out"
           amount={currentP?.total_expenses || 0}
-          subtitle={`${currentP?.transaction_count || 0} transactions logged`}
+          subtitle={`${currentP?.transaction_count || 0} entries`}
           icon={TrendingDown}
           badgeText={
             comparison?.expense_change_amount > 0
               ? `+${comparison.expense_change_percent}% vs Prior`
               : comparison?.expense_change_amount < 0
               ? `${comparison.expense_change_percent}% vs Prior`
-              : 'Equal to Prior'
+              : 'Same as Prior'
           }
           badgeType={comparison?.expense_change_amount > 0 ? 'negative' : 'positive'}
         />
         <StatCard
-          title="Period Net Balance"
+          title="Net Balance Left"
           amount={currentP?.remaining_balance || 0}
-          subtitle="Inflow minus Outflow"
+          subtitle="Money In minus Money Out"
           icon={Wallet}
           badgeText={currentP?.remaining_balance >= 0 ? 'Surplus' : 'Deficit'}
           badgeType={currentP?.remaining_balance >= 0 ? 'positive' : 'negative'}
         />
         <StatCard
-          title="Period Savings Rate"
+          title="Savings Habit"
           amount={currentP?.savings_rate || 0}
           isCurrency={false}
           rawSuffix="%"
-          subtitle={`Prior period rate: ${previousP?.savings_rate || 0}%`}
+          subtitle={`Previous rate: ${previousP?.savings_rate || 0}%`}
           icon={PiggyBank}
-          badgeText={currentP?.savings_rate >= 20 ? 'Optimal' : 'Caution'}
+          badgeText={currentP?.savings_rate >= 20 ? 'Great' : 'Try to Save'}
           badgeType={currentP?.savings_rate >= 20 ? 'positive' : 'warning'}
         />
       </div>
 
       {!hasData ? (
-        /* Empty State */
-        <div className="card-glass rounded-3xl p-12 text-center max-w-xl mx-auto space-y-5 border border-dashed border-slate-700">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/20">
-            <Sparkles className="w-8 h-8" />
+        /* Friendly Empty State */
+        <div className="card-glass rounded-3xl p-10 sm:p-12 text-center max-w-xl mx-auto space-y-4 border border-dashed border-slate-700">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/20">
+            <Sparkles className="w-7 h-7" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">No Transactions in This Period</h3>
+            <h3 className="text-base sm:text-lg font-bold text-white">No Expenses in This Period</h3>
             <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              No transactions found for the selected {periodType} period ({currentP?.start_date} to {currentP?.end_date}).
-              Add a new expense or change the period view to inspect your spending.
+              No entries found for {periodType} ({currentP?.start_date} to {currentP?.end_date}).
+              Add an expense or tap "Sample Demo" at the top to see how Nidhi Pilot works!
             </p>
           </div>
           <div className="flex items-center justify-center gap-3 pt-2">
@@ -483,14 +497,14 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
               className="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-500 text-navy-950 hover:bg-emerald-400 transition-all flex items-center gap-2"
             >
               <PlusCircle className="w-4 h-4" />
-              Add Expense / Income
+              <span>+ Add Entry</span>
             </button>
             <button
               onClick={onOpenImport}
               className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 transition-all flex items-center gap-2 border border-slate-700"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              Import CSV
+              <span>Import Bank File</span>
             </button>
           </div>
         </div>
@@ -499,11 +513,11 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
         <>
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Donut Chart: Spending by Category */}
-            <div className="card-glass rounded-2xl p-6 flex flex-col justify-between">
+            {/* Donut Chart: Where Did My Money Go? */}
+            <div className="card-glass rounded-2xl p-5 sm:p-6 flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-bold text-white">Spending by Category</h3>
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-sm font-bold text-white">Where Did My Money Go?</h3>
                   <button
                     onClick={() => onNavigate('analysis')}
                     className="text-xs text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
@@ -511,19 +525,19 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
                     Details <ArrowRight className="w-3 h-3" />
                   </button>
                 </div>
-                <p className="text-xs text-slate-400 mb-4">
-                  Distribution of outflows in {currentP?.period_label}
+                <p className="text-xs text-slate-400 mb-3">
+                  Spending split by category in {currentP?.period_label}
                 </p>
               </div>
 
               {pieData.length > 0 ? (
-                <div className="h-56 relative flex items-center justify-center">
+                <div className="h-52 relative flex items-center justify-center">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={pieData}
-                        innerRadius={55}
-                        outerRadius={80}
+                        innerRadius={50}
+                        outerRadius={75}
                         paddingAngle={3}
                         dataKey="value"
                       >
@@ -551,8 +565,8 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
                   </div>
                 </div>
               ) : (
-                <div className="h-56 flex items-center justify-center text-xs text-slate-500">
-                  No expense records found.
+                <div className="h-52 flex items-center justify-center text-xs text-slate-500">
+                  No expenses recorded yet.
                 </div>
               )}
 
@@ -570,29 +584,29 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
               </div>
             </div>
 
-            {/* Area Chart: Period Cash Flow Trajectory */}
-            <div className="card-glass rounded-2xl p-6 lg:col-span-2 flex flex-col justify-between">
+            {/* Area Chart: Money Flow Over Time */}
+            <div className="card-glass rounded-2xl p-5 sm:p-6 lg:col-span-2 flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1">
                   <h3 className="text-sm font-bold text-white">
                     {periodType === 'daily'
-                      ? 'Day Cashflow Breakdown'
+                      ? 'Today Money Movement'
                       : periodType === 'weekly'
-                      ? 'Daily Cash Flow This Week'
+                      ? 'This Week Daily Trend'
                       : periodType === 'yearly'
-                      ? 'Annual Monthly Trajectory'
-                      : 'Daily Spending Trajectory'}
+                      ? 'Annual Monthly Trend'
+                      : 'Daily Spending Trend'}
                   </h3>
                   <span className="text-[11px] text-slate-400 font-medium px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700/50">
-                    Real Aggregation
+                    Live Record
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mb-4">
-                  Aggregated directly from stored transaction dates
+                <p className="text-xs text-slate-400 mb-3">
+                  Green shows money coming in, red shows money spent
                 </p>
               </div>
 
-              <div className="h-64 w-full">
+              <div className="h-56 sm:h-64 w-full">
                 {trendData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
@@ -641,7 +655,7 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
                   </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex items-center justify-center text-xs text-slate-500">
-                    No date-based trend points found in this period.
+                    No trend points available for this period.
                   </div>
                 )}
               </div>
@@ -649,24 +663,24 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
               <div className="flex items-center justify-end gap-6 pt-3 border-t border-slate-800 text-xs">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-1 bg-emerald-400 rounded-full"></span>
-                  <span className="text-slate-400 text-[11px]">Income Inflow</span>
+                  <span className="text-slate-400 text-[11px]">Money In</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-1 bg-rose-400 rounded-full"></span>
-                  <span className="text-slate-400 text-[11px]">Expense Outflow</span>
+                  <span className="text-slate-400 text-[11px]">Money Spent</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Lower Grid: Recent Transactions & AI Insights */}
+          {/* Lower Grid: Recent Transactions & AI Money Tips */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Recent Transactions Table */}
-            <div className="card-glass rounded-2xl p-6 lg:col-span-2">
-              <div className="flex items-center justify-between mb-4">
+            <div className="card-glass rounded-2xl p-5 sm:p-6 lg:col-span-2">
+              <div className="flex items-center justify-between mb-3">
                 <div>
                   <h3 className="text-sm font-bold text-white">Recent Transactions</h3>
-                  <p className="text-xs text-slate-400">Latest recorded credits and debits</p>
+                  <p className="text-xs text-slate-400">Your latest money entries</p>
                 </div>
                 <button
                   onClick={() => onNavigate('transactions')}
@@ -680,37 +694,37 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase text-[10px] tracking-wider">
-                      <th className="pb-3">Description</th>
-                      <th className="pb-3">Category</th>
-                      <th className="pb-3">Method</th>
-                      <th className="pb-3">Date</th>
-                      <th className="pb-3 text-right">Amount</th>
+                      <th className="pb-2.5">Name</th>
+                      <th className="pb-2.5">Category</th>
+                      <th className="pb-2.5">Method</th>
+                      <th className="pb-2.5">Date</th>
+                      <th className="pb-2.5 text-right">Amount</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60 font-medium">
                     {recentTxns.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 text-slate-200 flex items-center gap-2">
+                        <td className="py-2.5 text-slate-200 flex items-center gap-2">
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                               t.transaction_type === 'income' ? 'bg-emerald-400' : 'bg-rose-400'
                             }`}
                           ></span>
-                          <span className="font-semibold truncate max-w-[180px]">{t.description}</span>
+                          <span className="font-semibold truncate max-w-[170px]">{t.description}</span>
                         </td>
-                        <td className="py-3">
+                        <td className="py-2.5">
                           <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700/60">
                             {t.category}
                           </span>
                         </td>
-                        <td className="py-3">
+                        <td className="py-2.5">
                           <span className="text-[10px] text-slate-400 font-mono">
                             {t.payment_method || 'UPI'}
                           </span>
                         </td>
-                        <td className="py-3 text-slate-400 text-[11px]">{formatDate(t.date)}</td>
+                        <td className="py-2.5 text-slate-400 text-[11px]">{formatDate(t.date)}</td>
                         <td
-                          className={`py-3 text-right font-bold ${
+                          className={`py-2.5 text-right font-bold ${
                             t.transaction_type === 'income' ? 'text-emerald-400' : 'text-slate-100'
                           }`}
                         >
@@ -725,14 +739,14 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
             </div>
 
             {/* AI Assistant Quick Insights Card */}
-            <div className="card-glass rounded-2xl p-6 flex flex-col justify-between">
+            <div className="card-glass rounded-2xl p-5 sm:p-6 flex flex-col justify-between">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-emerald-400">
                   <Sparkles className="w-4 h-4" />
-                  <h3 className="text-sm font-bold text-white">AI Financial Insights</h3>
+                  <h3 className="text-sm font-bold text-white">Smart Money Tips</h3>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Grounded in your ₹{currentP.total_expenses.toLocaleString('en-IN')} expenses in {currentP.period_label}:
+                  Based on your ₹{currentP.total_expenses.toLocaleString('en-IN')} spending in {currentP.period_label}:
                 </p>
 
                 {analysis?.recommendations && analysis.recommendations.length > 0 ? (
@@ -751,7 +765,7 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
                   </div>
                 ) : (
                   <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-400">
-                    Your spending is balanced with a healthy surplus buffer.
+                    Your spending is balanced with a healthy savings buffer.
                   </div>
                 )}
               </div>
@@ -762,7 +776,7 @@ export default function Dashboard({ onNavigate, onQuickAdd, onOpenImport }) {
                   className="w-full py-2.5 px-4 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-navy-950 hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Ask AI Finance Assistant
+                  <span>Ask AI Money Helper</span>
                 </button>
               </div>
             </div>

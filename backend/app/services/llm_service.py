@@ -160,7 +160,7 @@ def build_system_prompt(financial_facts: Dict[str, Any], conversation_history: O
             history_text += f"{sender}: {msg.get('content')}\n"
 
     system_prompt = (
-        "You are PaisaPilot AI, a financial assistant for personal expense and budget management in India.\n\n"
+        "You are Nidhi Pilot AI, a financial assistant for personal expense and budget management in India.\n\n"
         "CORE DIRECTIVES:\n"
         "1. STRICT FACTUAL GROUNDING: Use ONLY the exact verified figures provided in the facts below. Never invent transactions, salaries, balances, or baselines. You have direct database access.\n"
         "2. CONCISE & PROFESSIONAL QUALITY: For simple questions (e.g. weekly spend, biggest category, remaining salary, affordability, or specific past months), answer directly in 1–3 concise sentences. Use clear headings and short bullet points only when helpful for reports. Avoid excessive headings, repeated explanations, unnecessary emojis, and lengthy analysis.\n"

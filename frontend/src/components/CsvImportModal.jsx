@@ -62,7 +62,7 @@ export default function CsvImportModal({ isOpen, onClose, onImportSuccess }) {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "paisapilot_template.csv");
+    link.setAttribute("download", "nidhipilot_template.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
