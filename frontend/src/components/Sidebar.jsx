@@ -9,9 +9,10 @@ import {
   Compass,
   Sparkles,
   TrendingUp,
+  LogOut,
 } from 'lucide-react';
 
-export default function Sidebar({ activeTab, setActiveTab, onOpenSettings, groqConfigured }) {
+export default function Sidebar({ activeTab, setActiveTab, onOpenSettings, groqConfigured, onLogout }) {
   const navItems = [
     { id: 'dashboard', label: 'Money Overview', icon: LayoutDashboard },
     { id: 'transactions', label: 'All Transactions', icon: Receipt },
@@ -96,13 +97,25 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenSettings, groqC
           </p>
         </div>
 
-        <button
-          onClick={onOpenSettings}
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-700"
-        >
-          <SlidersHorizontal className="w-3.5 h-3.5" />
-          <span>API & Engine Settings</span>
-        </button>
+        <div className="space-y-1">
+          <button
+            onClick={onOpenSettings}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-700"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>API & Engine Settings</span>
+          </button>
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-rose-400/90 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/20"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
+          )}
+        </div>
       </div>
     </aside>
   );

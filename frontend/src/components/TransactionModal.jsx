@@ -1,6 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { X, Sparkles, CreditCard } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Sparkles, CreditCard, Calendar } from 'lucide-react';
 import { api } from '../services/api';
+
+const getTodayDate = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getYesterdayDate = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatFriendlyDate = (dateStr) => {
+  if (!dateStr) return 'Choose date';
+  try {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const parsed = new Date(y, m - 1, d);
+    return parsed.toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return dateStr;
+  }
+};
 
 const DEFAULT_CATEGORIES = [
   'Food & Dining',
@@ -38,11 +71,25 @@ export default function TransactionModal({
   const [category, setCategory] = useState('Food & Dining');
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [isEssential, setIsEssential] = useState(false);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getTodayDate);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [availableCategories, setAvailableCategories] = useState(DEFAULT_CATEGORIES);
+
+  const dateInputRef = useRef(null);
+  const todayStr = getTodayDate();
+  const yesterdayStr = getYesterdayDate();
+
+  const handleOpenDatePicker = () => {
+    if (dateInputRef.current) {
+      if (typeof dateInputRef.current.showPicker === 'function') {
+        dateInputRef.current.showPicker();
+      } else {
+        dateInputRef.current.focus();
+      }
+    }
+  };
 
   useEffect(() => {
     if (categoriesList && categoriesList.length > 0) {
@@ -65,7 +112,7 @@ export default function TransactionModal({
       setCategory(transaction.category || 'Food & Dining');
       setPaymentMethod(transaction.payment_method || 'UPI');
       setIsEssential(Boolean(transaction.is_essential));
-      setDate(transaction.date || new Date().toISOString().split('T')[0]);
+      setDate(transaction.date || getTodayDate());
       setNotes(transaction.notes || '');
     } else {
       setDescription('');
@@ -74,7 +121,7 @@ export default function TransactionModal({
       setCategory('Food & Dining');
       setPaymentMethod('UPI');
       setIsEssential(false);
-      setDate(new Date().toISOString().split('T')[0]);
+      setDate(getTodayDate());
       setNotes('');
     }
     setError('');
@@ -208,34 +255,85 @@ export default function TransactionModal({
             />
           </div>
 
-          {/* Amount & Date */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Amount & Date Section */}
+          <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                 Amount (₹)
               </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                required
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  required
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-semibold"
+                />
+                <span className="absolute left-3.5 top-2.5 text-slate-400 text-sm font-bold">₹</span>
+              </div>
             </div>
+
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Date
-              </label>
-              <input
-                type="date"
-                required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-              />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Date</span>
+                </label>
+                <span className="text-[11px] text-slate-400 font-medium">
+                  {date === todayStr ? 'Suggested: Today' : date === yesterdayStr ? 'Preset: Yesterday' : 'Custom Date'}
+                </span>
+              </div>
+
+              <div className="relative">
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  required
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 [color-scheme:dark] cursor-pointer"
+                />
+              </div>
+
+              {/* Quick Presets & Formatted Date Preview */}
+              <div className="flex items-center justify-between mt-2 pt-0.5">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setDate(todayStr)}
+                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition-all border ${
+                      date === todayStr
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm'
+                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDate(yesterdayStr)}
+                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition-all border ${
+                      date === yesterdayStr
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm'
+                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    Yesterday
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleOpenDatePicker}
+                  className="text-[11px] text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-1 cursor-pointer"
+                  title="Click to open calendar picker"
+                >
+                  <span>{formatFriendlyDate(date)}</span>
+                </button>
+              </div>
             </div>
           </div>
 

@@ -472,3 +472,213 @@ class ImportAgentCommitResponse(BaseModel):
     message: str
     sample_descriptions: List[str] = []
 
+
+# =====================
+# Auth & User Schemas
+# =====================
+
+class UserRegisterRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_\.-]+$")
+    email: str = Field(..., min_length=5, max_length=120)
+    password: str = Field(..., min_length=6, max_length=128)
+    name: Optional[str] = Field("User", max_length=100)
+    phone_number: Optional[str] = Field(None, max_length=20)
+    currency: Optional[str] = Field("INR", max_length=10)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        clean = v.strip().lower()
+        if "@" not in clean or "." not in clean.split("@")[-1]:
+            raise ValueError("Invalid email format")
+        return clean
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        return v.strip().lower()
+
+
+class UserLoginRequest(BaseModel):
+    username_or_email: str = Field(..., min_length=3, max_length=120)
+    password: str = Field(..., min_length=1, max_length=128)
+
+
+class UserResponse(BaseModel):
+    id: str
+    username: Optional[str] = None
+    email: Optional[str] = None
+    name: str
+    phone_number: Optional[str] = None
+    currency: str = "INR"
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AuthTokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
+class UserProfileUpdateRequest(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    email: Optional[str] = Field(None, min_length=5, max_length=120)
+    phone_number: Optional[str] = Field(None, max_length=20)
+    currency: Optional[str] = Field(None, max_length=10)
+    current_password: Optional[str] = None
+    new_password: Optional[str] = Field(None, min_length=6, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v.strip():
+            clean = v.strip().lower()
+            if "@" not in clean or "." not in clean.split("@")[-1]:
+                raise ValueError("Invalid email format")
+            return clean
+        return None
+
+
+# =====================
+# Recurring Expenses (Bills, EMIs, Insurance, Subscriptions)
+# =====================
+
+class RecurringExpenseBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=100)
+    category: str = Field("Bills & Utilities", min_length=1, max_length=50)
+    amount: float = Field(..., gt=0)
+    due_day: int = Field(5, ge=1, le=31)
+    payment_method: str = Field("Auto-Debit", max_length=30)
+    expense_type: str = Field("bill", max_length=30)  # "bill", "emi", "insurance", "subscription", "rent", "other"
+    is_active: bool = True
+    notes: Optional[str] = None
+
+
+class RecurringExpenseCreate(RecurringExpenseBase):
+    pass
+
+
+class RecurringExpenseUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=100)
+    category: Optional[str] = Field(None, min_length=1, max_length=50)
+    amount: Optional[float] = Field(None, gt=0)
+    due_day: Optional[int] = Field(None, ge=1, le=31)
+    payment_method: Optional[str] = Field(None, max_length=30)
+    expense_type: Optional[str] = Field(None, max_length=30)
+    is_active: Optional[bool] = None
+    notes: Optional[str] = None
+
+
+class RecurringExpenseResponse(RecurringExpenseBase):
+    id: int
+    user_id: str
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RecurringExpenseSummaryResponse(BaseModel):
+    items: List[RecurringExpenseResponse]
+    total_monthly_commitment: float = 0.0
+    active_count: int = 0
+    breakdown_by_type: Dict[str, float] = {}
+
+
+# =====================
+# Mobile Alerts & Budget Overrun Warning Schemas
+# =====================
+
+class MobileAlertLogResponse(BaseModel):
+    id: int
+    user_id: str
+    phone_number: str
+    alert_type: str
+    title: str
+    message: str
+    status: str
+    provider: str
+    dispatched_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EmailAlertLogResponse(BaseModel):
+    id: int
+    user_id: str
+    email: str
+    alert_type: str
+    subject: str
+    html_body: str
+    status: str
+    provider: str
+    error_message: Optional[str] = None
+    dispatched_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AlertStatusResponse(BaseModel):
+    has_phone: bool
+    phone_number: Optional[str] = None
+    has_email: bool = True
+    email: Optional[str] = None
+    is_over_budget: bool
+    warning_count: int
+    warnings: List[Dict[str, Any]] = []
+    recent_alerts: List[MobileAlertLogResponse] = []
+    recent_email_alerts: List[EmailAlertLogResponse] = []
+
+
+
+class SendTestSmsRequest(BaseModel):
+    phone_number: Optional[str] = None
+
+
+class CheckAndNotifyResponse(BaseModel):
+    triggered: bool
+    alerts_sent: int
+    messages: List[str] = []
+
+
+class SmsGatewayConfigRequest(BaseModel):
+    provider: Literal["fast2sms", "twilio"]
+    fast2sms_api_key: Optional[str] = None
+    twilio_account_sid: Optional[str] = None
+    twilio_auth_token: Optional[str] = None
+    twilio_phone_number: Optional[str] = None
+
+
+class SmsGatewayConfigResponse(BaseModel):
+    active_provider: str
+    is_configured: bool
+    fast2sms_configured: bool
+    twilio_configured: bool
+    fast2sms_masked: str = ""
+    twilio_sid_masked: str = ""
+    twilio_from: str = ""
+    message: str = ""
+
+
+class SendTestEmailRequest(BaseModel):
+
+    email: Optional[str] = None
+
+
+class EmailGatewayConfigRequest(BaseModel):
+    smtp_host: str
+    smtp_port: int = 587
+    smtp_user: str
+    smtp_password: str
+    smtp_from: Optional[str] = None
+    smtp_tls: bool = True
+
+
+class EmailGatewayConfigResponse(BaseModel):
+    is_configured: bool
+    provider: str
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_user_masked: str = ""
+    smtp_from: str = ""
+    smtp_tls: bool = True
+    message: str = ""

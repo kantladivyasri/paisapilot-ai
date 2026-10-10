@@ -12,10 +12,24 @@ import {
   ShieldCheck,
   Tags,
   AlertTriangle,
+  Plus,
+  Trash2,
+  Edit2,
+  CreditCard,
+  Shield,
+  Zap,
+  Calendar,
+  Phone,
+  Smartphone,
+  Send,
+  CheckCircle2,
+  ArrowRight,
+  Layers,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { formatINR } from '../utils/formatters';
 import CategoryModal from '../components/CategoryModal';
+import RecurringExpenseModal from '../components/RecurringExpenseModal';
 
 export default function BudgetPage() {
   const [budget, setBudget] = useState(null);
@@ -31,11 +45,79 @@ export default function BudgetPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
+  // Monthly Common Expenses (Bills, EMIs, Insurance)
+  const [recurringData, setRecurringData] = useState({
+    items: [],
+    total_monthly_commitment: 0,
+    active_count: 0,
+    breakdown_by_type: {},
+  });
+  const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
+  const [editingRecurringItem, setEditingRecurringItem] = useState(null);
+  const [alertStatus, setAlertStatus] = useState(null);
+  const [dispatchingSms, setDispatchingSms] = useState(false);
+  const [smsActionMsg, setSmsActionMsg] = useState(null);
+
   const currentMonth = new Date().toISOString().slice(0, 7);
 
   useEffect(() => {
     fetchBudget();
+    fetchRecurringAndAlerts();
   }, []);
+
+  const fetchRecurringAndAlerts = async () => {
+    try {
+      const [recData, aStatus] = await Promise.all([
+        api.getRecurringExpenses(),
+        api.getAlertStatus(),
+      ]);
+      if (recData) setRecurringData(recData);
+      if (aStatus) setAlertStatus(aStatus);
+    } catch (e) {
+      console.error('Failed to load recurring expenses or alert status:', e);
+    }
+  };
+
+  const handleDeleteRecurring = async (id) => {
+    if (!window.confirm('Delete this monthly recurring expense?')) return;
+    try {
+      await api.deleteRecurringExpense(id);
+      fetchRecurringAndAlerts();
+      fetchBudget();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleLogRecurringTxn = async (id) => {
+    try {
+      await api.logRecurringTransaction(id);
+      setSmsActionMsg('Recorded as current month transaction and checked budget alerts!');
+      fetchBudget();
+      fetchRecurringAndAlerts();
+      setTimeout(() => setSmsActionMsg(null), 5000);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleTriggerSmsCheck = async () => {
+    setDispatchingSms(true);
+    setSmsActionMsg(null);
+    try {
+      const res = await api.checkAndNotifyAlerts(true);
+      setSmsActionMsg(
+        res.alerts_sent > 0
+          ? `Dispatched ${res.alerts_sent} SMS warning alert(s) to your mobile number!`
+          : res.messages[0] || 'Budget evaluated: No new over-budget warnings detected.'
+      );
+      fetchRecurringAndAlerts();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setDispatchingSms(false);
+    }
+  };
 
   const fetchBudget = async () => {
     setLoading(true);
@@ -153,6 +235,64 @@ export default function BudgetPage() {
           <span>Category Settings</span>
         </button>
       </div>
+
+      {/* Toast Notice */}
+      {smsActionMsg && (
+        <div className="p-4 rounded-xl bg-teal-500/15 border border-teal-500/40 text-teal-300 text-xs font-semibold flex items-center justify-between animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-teal-400" />
+            <span>{smsActionMsg}</span>
+          </div>
+          <button onClick={() => setSmsActionMsg(null)} className="text-teal-400 hover:text-white">
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Critical Over-Budget Warning & Mobile SMS Notification Banner */}
+      {alertStatus && alertStatus.is_over_budget && (
+        <div className="p-5 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-3 animate-in fade-in">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2.5 text-rose-400 font-bold text-sm">
+              <ShieldAlert className="w-5 h-5 shrink-0" />
+              <span>🚨 Active Budget Overrun Warning ({alertStatus.warning_count} Cap Breach{alertStatus.warning_count > 1 ? 'es' : ''})</span>
+            </div>
+            {alertStatus.has_phone ? (
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5" />
+                  SMS Sent to {alertStatus.phone_number}
+                </span>
+                <button
+                  onClick={handleTriggerSmsCheck}
+                  disabled={dispatchingSms}
+                  className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 transition-all flex items-center gap-1 disabled:opacity-50"
+                >
+                  <Send className="w-3 h-3" />
+                  <span>{dispatchingSms ? 'Sending SMS...' : 'Resend SMS Alert'}</span>
+                </button>
+              </div>
+            ) : (
+              <span className="text-[11px] font-medium text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5" />
+                No mobile linked — Add phone in Profile to receive SMS alerts!
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+            {alertStatus.warnings.map((w, idx) => (
+              <div key={idx} className="p-3 bg-slate-950/70 border border-rose-500/20 rounded-xl text-xs space-y-1">
+                <div className="flex items-center justify-between font-semibold text-rose-300">
+                  <span>{w.category}</span>
+                  <span className="font-mono text-rose-400">+{formatINR(w.excess)} Over Limit</span>
+                </div>
+                <p className="text-[11px] text-slate-300">{w.message}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Shortfall Alert if Deficit */}
       {budget && !budget.is_balanced && (
@@ -485,6 +625,184 @@ export default function BudgetPage() {
           )}
         </div>
       </div>
+
+      {/* Monthly Common Expenses (Bills, EMIs, Insurance) */}
+      <div className="bg-navy-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-teal-500/10 text-teal-400">
+                <Layers className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-white tracking-tight">
+                Monthly Common Expenses & Fixed Commitments
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Add recurring obligations like loan EMIs, insurance premiums, house rent, and utility bills.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              setEditingRecurringItem(null);
+              setIsRecurringModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-400 text-navy-950 transition-all shadow-md shadow-emerald-500/20 shrink-0 self-start sm:self-auto cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Add Common Expense</span>
+          </button>
+        </div>
+
+        {/* Summary Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Total Monthly Commitment
+            </span>
+            <span className="text-2xl font-black text-white font-mono mt-1 block">
+              {formatINR(recurringData.total_monthly_commitment)}
+            </span>
+            <span className="text-[11px] text-slate-400 mt-1 block">
+              Fixed recurring outflows each month
+            </span>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Active Recurring Items
+            </span>
+            <span className="text-2xl font-black text-teal-400 font-mono mt-1 block">
+              {recurringData.active_count}
+            </span>
+            <span className="text-[11px] text-slate-400 mt-1 block">
+              Bills, EMIs & Insurance policies
+            </span>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Commitment vs Income
+            </span>
+            <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">
+              {incomeNum > 0
+                ? `${Math.round((recurringData.total_monthly_commitment / incomeNum) * 100)}%`
+                : '0%'}
+            </span>
+            <span className="text-[11px] text-slate-400 mt-1 block">
+              Of your monthly take-home income
+            </span>
+          </div>
+        </div>
+
+        {/* Recurring Items List / Grid */}
+        {recurringData.items && recurringData.items.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {recurringData.items.map((item) => {
+              const typeBadgeColors = {
+                emi: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+                insurance: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+                bill: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+                subscription: 'bg-teal-500/15 text-teal-300 border-teal-500/30',
+                rent: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+                other: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
+              };
+              const badgeClass = typeBadgeColors[item.expense_type] || typeBadgeColors.other;
+
+              return (
+                <div
+                  key={item.id}
+                  className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-all space-y-3 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${badgeClass}`}>
+                        {item.expense_type}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-emerald-400" />
+                        Due on {item.due_day}th
+                      </span>
+                    </div>
+
+                    <h4 className="text-sm font-bold text-white mt-2 truncate">
+                      {item.title}
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5 truncate">
+                      {item.category} • {item.payment_method}
+                    </p>
+                    {item.notes && (
+                      <p className="text-[11px] text-slate-500 mt-1 italic truncate">
+                        {item.notes}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                    <span className="text-base font-black text-emerald-400 font-mono">
+                      {formatINR(item.amount)}
+                      <span className="text-[10px] text-slate-400 font-normal">/mo</span>
+                    </span>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleLogRecurringTxn(item.id)}
+                        title="Log this bill/EMI as transaction for this month"
+                        className="px-2 py-1 text-[11px] font-semibold rounded-lg bg-teal-500/10 text-teal-300 border border-teal-500/30 hover:bg-teal-500/20 transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Log Paid</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingRecurringItem(item);
+                          setIsRecurringModalOpen(true);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRecurring(item.id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-8 rounded-xl bg-slate-950/40 border border-dashed border-slate-800 text-center space-y-2">
+            <Layers className="w-8 h-8 text-slate-600 mx-auto" />
+            <p className="text-xs text-slate-400">
+              No common monthly expenses added yet.
+            </p>
+            <button
+              onClick={() => {
+                setEditingRecurringItem(null);
+                setIsRecurringModalOpen(true);
+              }}
+              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold underline cursor-pointer"
+            >
+              Add your first EMI, Bill, or Insurance policy
+            </button>
+          </div>
+        )}
+      </div>
+
+      <RecurringExpenseModal
+        isOpen={isRecurringModalOpen}
+        onClose={() => {
+          setIsRecurringModalOpen(false);
+          setEditingRecurringItem(null);
+        }}
+        onSaved={fetchRecurringAndAlerts}
+        item={editingRecurringItem}
+      />
 
       <CategoryModal
         isOpen={isCategoryModalOpen}

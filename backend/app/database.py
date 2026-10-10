@@ -74,6 +74,20 @@ def run_migrations_and_seed(db_engine):
             if "updated_at" not in existing_g_cols:
                 conn.execute(text("ALTER TABLE savings_goals ADD COLUMN updated_at DATETIME"))
 
+            # Check users table columns
+            u_cols = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+            existing_u_cols = {row[1] for row in u_cols}
+            if "username" not in existing_u_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR(50)"))
+            if "email" not in existing_u_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN email VARCHAR(120)"))
+            if "hashed_password" not in existing_u_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN hashed_password VARCHAR(255)"))
+            if "phone_number" not in existing_u_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN phone_number VARCHAR(20)"))
+            if "updated_at" not in existing_u_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN updated_at DATETIME"))
+
             conn.commit()
         except Exception as e:
             print(f"Migration notice: {e}")

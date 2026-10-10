@@ -7,9 +7,14 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(String(50), primary_key=True, default="default_user")
+    username = Column(String(50), unique=True, index=True, nullable=True)
+    email = Column(String(120), unique=True, index=True, nullable=True)
+    hashed_password = Column(String(255), nullable=True)
     name = Column(String(100), default="Primary User", nullable=False)
+    phone_number = Column(String(20), nullable=True)
     currency = Column(String(10), default="INR", nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
 class SalaryRecord(Base):
@@ -106,3 +111,50 @@ class ChatMessage(Base):
     engine = Column(String(30), nullable=True)
     intent = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class RecurringExpense(Base):
+    __tablename__ = "recurring_expenses"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(String(50), default="default_user", nullable=False, index=True)
+    title = Column(String(100), nullable=False)  # e.g. "Car EMI", "Electricity Bill", "Health Insurance"
+    category = Column(String(50), nullable=False, default="Bills & Utilities")
+    amount = Column(Float, nullable=False)
+    due_day = Column(Integer, default=5, nullable=False)  # Day of month (1-31)
+    payment_method = Column(String(30), default="Auto-Debit", nullable=False)
+    expense_type = Column(String(30), default="bill", nullable=False)  # "bill", "emi", "insurance", "subscription", "rent", "other"
+    is_active = Column(Boolean, default=True, nullable=False)
+    notes = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class MobileAlertLog(Base):
+    __tablename__ = "mobile_alert_logs"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(String(50), default="default_user", nullable=False, index=True)
+    phone_number = Column(String(20), nullable=False)
+    alert_type = Column(String(50), nullable=False)  # "budget_overrun", "category_limit_exceeded", "deficit_warning", "bill_due"
+    title = Column(String(150), nullable=False)
+    message = Column(Text, nullable=False)
+    status = Column(String(30), default="delivered", nullable=False)  # "delivered", "simulated", "failed"
+    provider = Column(String(50), default="Simulator", nullable=False)
+    dispatched_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class EmailAlertLog(Base):
+    __tablename__ = "email_alert_logs"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(String(50), default="default_user", nullable=False, index=True)
+    email = Column(String(120), nullable=False)
+    alert_type = Column(String(50), nullable=False)  # "budget_overrun", "category_limit_exceeded", "test_verification"
+    subject = Column(String(200), nullable=False)
+    html_body = Column(Text, nullable=False)
+    status = Column(String(30), default="delivered", nullable=False)  # "delivered", "failed", "simulated"
+    provider = Column(String(50), default="SMTP", nullable=False)
+    error_message = Column(Text, nullable=True)
+    dispatched_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+

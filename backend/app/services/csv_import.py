@@ -71,7 +71,7 @@ def parse_date_flexibly(val: Any) -> Optional[str]:
     return None
 
 
-def parse_and_import_csv(content: bytes, filename: str, db: Session) -> CsvImportResponse:
+def parse_and_import_csv(content: bytes, filename: str, db: Session, user_id: str = "default_user") -> CsvImportResponse:
     """
     Parses CSV content safely with pandas, validates row-by-row, detects potential duplicates,
     and inserts valid records into the database.
@@ -141,7 +141,11 @@ def parse_and_import_csv(content: bytes, filename: str, db: Session) -> CsvImpor
         )
 
     # Cache existing transactions to detect duplicates
-    existing_records = db.query(Transaction.description, Transaction.amount, Transaction.date).all()
+    existing_records = (
+        db.query(Transaction.description, Transaction.amount, Transaction.date)
+        .filter(Transaction.user_id == user_id)
+        .all()
+    )
     existing_set = set((r[0].lower().strip(), round(r[1], 2), r[2]) for r in existing_records)
 
     imported_rows: List[Transaction] = []
@@ -243,7 +247,7 @@ def parse_and_import_csv(content: bytes, filename: str, db: Session) -> CsvImpor
 
         # Create model
         t_model = Transaction(
-            user_id="default_user",
+            user_id=user_id,
             description=desc_val,
             amount=amount,
             transaction_type=txn_type,

@@ -13,3 +13,6 @@ langchain-community>=0.2.0
 langchain-groq>=0.1.0
 groq>=0.30.0
 langchain-google-genai>=4.0.0
+pyjwt>=2.8.0
+bcrypt>=4.0.0
+
