@@ -47,7 +47,23 @@ Nidhi Pilot AI is a full-stack, hackathon-ready intelligent personal financial p
    - Deterministic completion projection: `(Target - Current) / Monthly Contribution`.
    - **Feasibility Intelligence:** Compares planned contributions against the user's actual monthly surplus.
 
-6. **Dual-Engine AI Finance Assistant:**
+6. **User Authentication & Multi-Tenant Isolation:**
+   - Dedicated JWT-based sign-in and registration pages.
+   - Profile management with phone number, email, and password updates.
+   - Complete multi-tenant database isolation ensuring users only access their own financial records.
+
+7. **Monthly Common Expenses & Recurring Bills (EMIs, Insurance, Rent):**
+   - Track monthly recurring obligations: Rent, electricity, broadband, loan EMIs, insurance policies, and OTT subscriptions.
+   - Proactively factors recurring expenses into monthly budget plans.
+   - 1-click "Log as Expense" to post monthly bills directly to active transaction history.
+
+8. **Automated Budget Overrun Warnings (SMS & Email Alerts):**
+   - Automatically detects when current spending exceeds category budget caps or monthly budget limits.
+   - **Real SMS Gateway:** Supports Fast2SMS (India) and Twilio (Global) for direct mobile phone SMS alerts.
+   - **Email Alerts & SMTP Gateway:** Sends rich HTML email alerts via Gmail (Google App Passwords), Outlook, or Custom SMTP.
+   - **In-App Alert Inbox & Live HTML Preview:** Preserves every alert locally with full interactive email preview modal so alerts are never lost even if home ISPs filter outbound SMTP ports.
+
+9. **Dual-Engine AI Finance Assistant:**
    - Conversational assistant grounded exclusively in real database figures.
    - **Groq LLM Integration:** Uses Groq (`llama-3.3-70b-versatile` or `llama-3.1-8b-instant`) with strict financial facts injected into the prompt.
    - **Deterministic Fallback Engine:** If no Groq API key is configured or network is offline, seamlessly operates using a 100% deterministic rule-based engine.
