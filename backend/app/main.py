@@ -1567,5 +1567,25 @@ def get_email_alert_logs(
     return [EmailAlertLogResponse.model_validate(l) for l in logs]
 
 
+# =====================
+# Frontend Static Files Mount (for Unified Cloud Hosting on Render/Docker)
+# =====================
+frontend_dist = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend", "dist")
+)
+if os.path.exists(frontend_dist):
+    from fastapi.staticfiles import StaticFiles
+    from starlette.responses import FileResponse
 
+    assets_dir = os.path.join(frontend_dist, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
+    @app.get("/{full_path:path}")
+    async def serve_frontend_spa(full_path: str):
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API route not found")
+        file_path = os.path.join(frontend_dist, full_path)
+        if full_path and os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(frontend_dist, "index.html"))

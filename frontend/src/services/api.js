@@ -1,4 +1,9 @@
-const API_BASE = '/api';
+const RAW_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) || '/api';
+const API_BASE = RAW_BASE.endsWith('/api')
+  ? RAW_BASE
+  : RAW_BASE === '/api'
+  ? '/api'
+  : `${RAW_BASE.replace(/\/$/, '')}/api`;
 
 export const authStorage = {
   getToken: () => localStorage.getItem('nidhi_auth_token') || '',

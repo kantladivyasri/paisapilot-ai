@@ -1,0 +1,52 @@
+services:
+  # =========================================================================
+  # 1. FastAPI Backend Web Service
+  # =========================================================================
+  - type: web
+    name: paisapilot-backend
+    runtime: python
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.11
+      - key: DATABASE_URL
+        value: sqlite:///./paisapilot.db
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: GROQ_MODEL
+        value: qwen/qwen3.8-27b
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_TLS
+        value: "true"
+
+  # =========================================================================
+  # 2. Vite React Frontend Static Site
+  # =========================================================================
+  - type: web
+    name: paisapilot-frontend
+    runtime: static
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: paisapilot-backend
+          property: host
