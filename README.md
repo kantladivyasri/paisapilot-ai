@@ -4,6 +4,8 @@
 
 Nidhi Pilot AI is a full-stack, hackathon-ready intelligent personal financial planning web application tailored for Indian students, salaried professionals, and individuals seeking financial clarity. It converts raw income/expense transactions into structured financial insights, deterministic budgeting plans, savings targets, and interactive AI assistance.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/kantladivyasri/paisapilot-ai)
+
 ---
 
 ## 🌟 Key Highlights & Features
